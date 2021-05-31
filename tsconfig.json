@@ -15,4 +15,7 @@
   "ts-node": {
     "transpileOnly": true,
   },
+  "exclude": [
+    "test"
+  ]
 }
