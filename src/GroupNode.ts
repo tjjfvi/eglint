@@ -1,5 +1,4 @@
 
-import { ContextProvider } from "./Context"
 import { Node } from "./Node"
 
 export class GroupNode<T extends Node = Node> extends Node {
@@ -16,14 +15,11 @@ export class GroupNode<T extends Node = Node> extends Node {
       this.weights = this.weights.map(w => w / weightSum)
   }
 
-  toString(context: ContextProvider){
-    let acc = ""
-    for(const child of this.children)
-      acc += child.toString(context)
-    return acc
+  override getChildren(){
+    return this.children
   }
 
-  _similarityTo(node: Node): number{
+  override _similarityTo(node: Node): number{
     if(node instanceof GroupNode && node.children.length === this.children.length)
       return this.children
         .map((c, i) =>
@@ -33,7 +29,7 @@ export class GroupNode<T extends Node = Node> extends Node {
     return super._similarityTo(node)
   }
 
-  _adaptTo(node: Node): Node{
+  override _adaptTo(node: Node): Node{
     if(node instanceof GroupNode && node.children.length === this.children.length)
       return new GroupNode(this.children.map((c, i) => c.adaptTo(node.children[i])), this.weights)
     return super._adaptTo(node)

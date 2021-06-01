@@ -3,8 +3,8 @@ import { TextNode } from "./TextNode"
 
 export class KeywordNode extends TextNode {
 
-  compareClass = KeywordNode
-  $sameText = 1
-  $differentText = 0
+  override compareClass = KeywordNode
+  override $sameText = 1
+  override $differentText = 0
 
 }

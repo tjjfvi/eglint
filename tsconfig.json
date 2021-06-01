@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
+    "noImplicitOverride": true,
     "esModuleInterop": true,
     "target": "ES2019",
     "downlevelIteration": true,

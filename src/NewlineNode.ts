@@ -8,7 +8,7 @@ export class NewlineNode extends Node {
     super()
   }
 
-  toString(context: ContextProvider){
+  override toString(context: ContextProvider){
     const indentation = context.getContext(IndentContext)
     indentation.level += this.deltaIndent
     return "\n" + indentation
@@ -17,13 +17,13 @@ export class NewlineNode extends Node {
   $sameIndentation = 1
   $differentIndentation = .5
 
-  _similarityTo(node: Node): number{
+  override _similarityTo(node: Node): number{
     if(node instanceof NewlineNode)
       return this.deltaIndent === node.deltaIndent ? this.$sameIndentation : this.$differentIndentation
     return super._similarityTo(node)
   }
 
-  _adaptTo(node: Node): Node{
+  override _adaptTo(node: Node): Node{
     if(node instanceof NewlineNode)
       return node
     return super._adaptTo(node)
@@ -35,7 +35,7 @@ export class IndentContext extends Context {
 
   level = 0
 
-  toString(){
+  override toString(){
     return "  ".repeat(this.level)
   }
 

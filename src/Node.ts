@@ -3,42 +3,51 @@ import { ContextProvider } from "./Context"
 
 export abstract class Node {
 
-  abstract toString(context: ContextProvider): string
+  toString(context: ContextProvider): string{
+    let acc = ""
+    for(const child of this.getChildren())
+      acc += child.toString(context)
+    return acc
+  }
+
+  getChildren(): Iterable<Node>{
+    return []
+  }
 
   #similarityMemo = new WeakMap<Node, number>()
-  similarityTo(to: Node): number{
-    const existing = this.#similarityMemo.get(to)
+  similarityTo(node: Node): number{
+    const existing = this.#similarityMemo.get(node)
     if(existing !== undefined) return existing
-    const similarity = this._similarityTo(to)
-    this.#similarityMemo.set(to, similarity)
+    const existingReverse = node.#similarityMemo.get(node)
+    if(existingReverse !== undefined) return existingReverse
+    let similarity = this._similarityTo(node)
+    if(isNaN(similarity)) similarity = node._similarityTo(this)
+    this.#similarityMemo.set(node, similarity)
     return similarity
   }
 
-  protected _similarityTo(to: Node): number{
-    return to._similarityFrom(this)
-  }
-
-  protected _similarityFrom(from: Node): number{
-    from
-    return 0
+  protected _similarityTo(node: Node): number{
+    node
+    return NaN
   }
 
   #adaptMemo = new WeakMap<Node, Node>()
-  adaptTo(reference: Node): Node{
-    const existing = this.#adaptMemo.get(reference)
+  adaptTo(referenceNode: Node): Node{
+    const existing = this.#adaptMemo.get(referenceNode)
     if(existing !== undefined) return existing
-    const reconciled = this._adaptTo(reference)
-    this.#adaptMemo.set(reference, reconciled)
+    const reconciled = this._adaptTo(referenceNode)
+    this.#adaptMemo.set(referenceNode, reconciled)
     return reconciled
   }
 
-  protected _adaptTo(reference: Node): Node{
-    reference
-    return reference._applyTo(this)
+  protected _adaptTo(referenceNode: Node): Node{
+    referenceNode
+    return referenceNode._applyTo(this)
   }
 
-  protected _applyTo(source: Node): Node{
-    return source
+  protected _applyTo(sourceNode: Node): Node{
+    sourceNode
+    return this
   }
 
 }

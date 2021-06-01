@@ -7,7 +7,7 @@ export class TextNode extends Node {
     super()
   }
 
-  toString(){
+  override toString(){
     return this.text
   }
 
@@ -15,7 +15,7 @@ export class TextNode extends Node {
   $sameText = 1
   $differentText = 0
 
-  _similarityTo(node: Node): number{
+  override _similarityTo(node: Node): number{
     if(node instanceof this.compareClass)
       return this.text === node.text ? this.$sameText : this.$differentText
     return super._similarityTo(node)

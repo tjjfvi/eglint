@@ -3,8 +3,8 @@ import { TextNode } from "./TextNode"
 
 export class IdentifierNode extends TextNode {
 
-  compareClass = IdentifierNode
-  $sameText = 1
-  $differentText = .9
+  override compareClass = IdentifierNode
+  override $sameText = 1
+  override $differentText = .9
 
 }
