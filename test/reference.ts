@@ -1,5 +1,5 @@
 // @ts-nocheck
-// eg
+/* eslint-disable */
 
 const x = [1, 2, "abc", 5n + 6n, []]
 
