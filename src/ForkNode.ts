@@ -20,11 +20,11 @@ export class ForkNode<T extends Node = Node> extends Node {
     return this.current.similarityTo(from)
   }
 
-  _reconcileTo(to: Node){
-    let best = this.current.reconcileTo(to)
+  _adaptTo(to: Node){
+    let best = this.current.adaptTo(to)
     let bestWeight = best.similarityTo(to)
     for(const node of this.alternatives) {
-      let reconciled = node.reconcileTo(to)
+      let reconciled = node.adaptTo(to)
       let reconciledWeight = reconciled.similarityTo(to)
       if(reconciledWeight > bestWeight) {
         best = reconciled
@@ -34,8 +34,8 @@ export class ForkNode<T extends Node = Node> extends Node {
     return best
   }
 
-  _reconcileFrom(from: Node){
-    return from.reconcileTo(this.current)
+  _applyTo(from: Node){
+    return from.adaptTo(this.current)
   }
 
 }

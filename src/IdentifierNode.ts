@@ -20,10 +20,10 @@ export class IdentifierNode extends Node {
     return super._similarityTo(node)
   }
 
-  _reconcileTo(node: Node): Node{
+  _adaptTo(node: Node): Node{
     if(node instanceof IdentifierNode)
       return this
-    return super._reconcileTo(node)
+    return super._adaptTo(node)
   }
 
 }

@@ -33,10 +33,10 @@ export class GroupNode<T extends Node = Node> extends Node {
     return super._similarityTo(node)
   }
 
-  _reconcileTo(node: Node): Node{
+  _adaptTo(node: Node): Node{
     if(node instanceof GroupNode && node.children.length === this.children.length)
-      return new GroupNode(this.children.map((c, i) => c.reconcileTo(node.children[i])), this.weights)
-    return super._reconcileTo(node)
+      return new GroupNode(this.children.map((c, i) => c.adaptTo(node.children[i])), this.weights)
+    return super._adaptTo(node)
   }
 
 }

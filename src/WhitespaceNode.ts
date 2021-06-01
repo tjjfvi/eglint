@@ -4,10 +4,10 @@ import { GroupNode } from "./GroupNode"
 
 export class WhitespaceNode extends GroupNode {
 
-  _reconcileTo(node: Node): Node{
+  _adaptTo(node: Node): Node{
     if(node instanceof WhitespaceNode)
       return node
-    return super._reconcileTo(node)
+    return super._adaptTo(node)
   }
 
 }

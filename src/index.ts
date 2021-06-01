@@ -108,7 +108,7 @@ console.log(printTsNode(sourceTsNode))
 
 console.log(
   source
-    .reconcileTo(reference)
+    .adaptTo(reference)
     .toString(new ContextProvider()),
 )
 

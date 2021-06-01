@@ -23,10 +23,10 @@ export class NewlineNode extends Node {
     return super._similarityTo(node)
   }
 
-  _reconcileTo(node: Node): Node{
+  _adaptTo(node: Node): Node{
     if(node instanceof NewlineNode)
       return node
-    return super._reconcileTo(node)
+    return super._adaptTo(node)
   }
 
 }
