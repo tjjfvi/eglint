@@ -10,11 +10,17 @@
     "module": "CommonJS",
     "composite": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "lib": [
+      "ES2019"
+    ]
   },
   "ts-node": {
     "transpileOnly": true,
   },
+  "include": [
+    "src/*"
+  ],
   "exclude": [
     "test"
   ]

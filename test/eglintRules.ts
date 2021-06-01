@@ -1,11 +1,11 @@
 // @ts-nocheck
 // eg
 
-const x = {
-  a: 1, // This comment should be left alone
+const x = [1, 2, "abc", 5n + 6n, []]
+
+const y = {
+  a: 1,
   b: 2,
+  c,
+  ...{ x },
 }
-
-const x = {}
-
-const x = { a: 1, b: 2 }
