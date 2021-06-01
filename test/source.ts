@@ -6,7 +6,7 @@ const x = [
       2,
 "abc"
 ,5n 
-                          + 6n, []
+                          + 6n, [ ]
                   ]
 
 const
