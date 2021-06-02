@@ -1,5 +1,6 @@
 
 import { Node } from "./Node"
+import { NodeCollection } from "./NodeCollection"
 
 export class SpaceNode extends Node {
 
@@ -11,8 +12,6 @@ export class SpaceNode extends Node {
     return " ".repeat(this.count)
   }
 
-  override *getChildren(){}
-
   $sameCount = 1
   $differentCount = .5
 
@@ -22,10 +21,10 @@ export class SpaceNode extends Node {
     return super._similarityTo(node)
   }
 
-  override _adaptTo(node: Node): Node{
+  override _adaptTo(reference: NodeCollection, node: Node): Node | null{
     if(node instanceof SpaceNode)
       return node
-    return super._adaptTo(node)
+    return super._adaptTo(reference, node)
   }
 
 }

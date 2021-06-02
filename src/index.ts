@@ -13,6 +13,7 @@ import { ContextProvider } from "./Context"
 import { inspect } from "util"
 import { IdentifierNode } from "./IdentifierNode"
 import { EmptyNode } from "./EmptyNode"
+import { ListNode } from "./ListNode"
 
 const file = (path: string) => readFileSync(require.resolve(path), "utf8")
 
@@ -115,7 +116,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       ]))
       i++
     }
-    return new GroupNode(nodes)
+    return new ListNode(nodes)
   }
 
   function getTsChildren(node: ts.Node){
@@ -144,7 +145,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
         if(deltaIndent === undefined) throw new Error("Invalid state")
         children.push(new NewlineNode(deltaIndent))
       }
-      else children.push(new TextNode(match))
+      // else children.push(new TextNode(match))
     }
     return new WhitespaceNode(children)
   }
@@ -156,30 +157,26 @@ export function printTsNode(sourceFile: ts.SourceFile, node: ts.Node = sourceFil
   const end = node.end
   const text = node.getText(sourceFile)
   console.log(
-    " ".repeat(indent) + syntaxKind(node.kind),
+    "| ".repeat(indent) + syntaxKind(node.kind),
     `${i(start)}-${i(end)}`,
     (children.length ? "{" : i(text) + ","),
   )
   for(const child of children) printTsNode(sourceFile, child, indent + 1)
-  if(children.length) console.log(" ".repeat(indent) + "},")
+  if(children.length) console.log("| ".repeat(indent) + "},")
+}
+
+export function printNode(node: Node, contextProvider = new ContextProvider(), indent = 0){
+  const children = [...node.getChildren()]
+  console.log(
+    "| ".repeat(indent) + node.constructor.name,
+    ...(node.metadata ? [i(node.metadata)] : []),
+    (children.length ? "{" : i(node.toString(contextProvider)) + ","),
+  )
+  for(const child of children) printNode(child, contextProvider, indent + 1)
+  if(children.length) console.log("| ".repeat(indent) + "},")
 }
 
 const isExpressionNode = (ts as any).isExpressionNode as (node: ts.Node) => boolean
-
-const referenceTsNode = ts.createSourceFile("reference", file("../test/reference.ts"), ts.ScriptTarget.ES2020, true)
-const reference = parseTsSourceFile(referenceTsNode)
-const sourceTsNode = ts.createSourceFile("reference", file("../test/source.ts"), ts.ScriptTarget.ES2020, true)
-const source = parseTsSourceFile(sourceTsNode)
-
-console.log(printTsNode(sourceTsNode))
-console.log(i(reference))
-
-console.log(x)
-console.log(
-  source
-    .adaptTo(reference)
-    .toString(new ContextProvider()),
-)
 
 function i(source: unknown){
   return inspect(source, { depth: null, colors: true })
@@ -191,3 +188,37 @@ function syntaxKind(kind: ts.SyntaxKind){
       return name
   return "<?>"
 }
+
+const referenceTsNode = ts.createSourceFile("reference", file("../test/reference.ts"), ts.ScriptTarget.ES2020, true)
+const referenceNode = parseTsSourceFile(referenceTsNode)
+// const sourceTsNode = ts.createSourceFile("reference", file("../test/source.ts"), ts.ScriptTarget.ES2020, true)
+// const sourceNode = parseTsSourceFile(sourceTsNode)
+
+// const sourceNode =
+//   new ListNode([
+//     new GroupNode([new TextNode("b"), new WhitespaceNode([new TextNode("! ")])]),
+//     new GroupNode([new TextNode("a"), new WhitespaceNode([new TextNode("! ")])]),
+//     new GroupNode([new TextNode("c"), new WhitespaceNode([new TextNode("! ")])]),
+//     new GroupNode([new TextNode("d"), new WhitespaceNode([new TextNode("! ")])]),
+//     new GroupNode([new TextNode("a"), new WhitespaceNode([new TextNode("! ")])]),
+//   ])
+// const referenceNode =
+//   new ListNode([
+//     new GroupNode([new TextNode("a"), new WhitespaceNode([new TextNode("A ")])]),
+//     new GroupNode([new TextNode("b"), new WhitespaceNode([new TextNode("B ")])]),
+//     new GroupNode([new TextNode("c"), new WhitespaceNode([new TextNode("B ")])]),
+//   ])
+
+// const _outputNode = referenceNode.adaptTo(new NodeCollection(referenceNode), referenceNode)
+// const outputNode = _outputNode ?? sourceNode
+
+console.log(printTsNode(referenceTsNode))
+console.log(printNode(referenceNode))
+
+console.log(x)
+// console.log(
+//   outputNode
+//   // (sourceNode.adaptTo(reference, referenceNode) ?? sourceNode)
+//     .toString(new ContextProvider()),
+// )
+

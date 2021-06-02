@@ -1,6 +1,7 @@
 
 import { ContextProvider, Context } from "./Context"
 import { Node } from "./Node"
+import { NodeCollection } from "./NodeCollection"
 
 export class NewlineNode extends Node {
 
@@ -23,10 +24,10 @@ export class NewlineNode extends Node {
     return super._similarityTo(node)
   }
 
-  override _adaptTo(node: Node): Node{
+  override _adaptTo(reference: NodeCollection, node: Node): Node | null{
     if(node instanceof NewlineNode)
       return node
-    return super._adaptTo(node)
+    return super._adaptTo(reference, node)
   }
 
 }
@@ -36,6 +37,8 @@ export class IndentContext extends Context {
   level = 0
 
   override toString(){
+    if(this.level < 0)
+      return "!!".repeat(-this.level)
     return "  ".repeat(this.level)
   }
 

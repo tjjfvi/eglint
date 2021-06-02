@@ -1,12 +1,12 @@
 import { Node } from "./Node"
+import { NodeCollection } from "./NodeCollection"
 
 export class EmptyNode extends Node {
 
-  $nonEmpty = .5
-
-  override _similarityTo(node: Node){
-    if(node instanceof EmptyNode) return 1
-    return this.$nonEmpty
+  override _adaptTo(reference: NodeCollection, node: Node): Node | null{
+    if(node instanceof EmptyNode)
+      return this
+    return super._adaptTo(reference, node)
   }
 
 }

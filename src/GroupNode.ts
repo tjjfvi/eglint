@@ -1,5 +1,6 @@
 
 import { Node } from "./Node"
+import { NodeCollection } from "./NodeCollection"
 
 export class GroupNode<T extends Node = Node> extends Node {
 
@@ -29,10 +30,16 @@ export class GroupNode<T extends Node = Node> extends Node {
     return super._similarityTo(node)
   }
 
-  override _adaptTo(node: Node): Node{
-    if(node instanceof GroupNode && node.children.length === this.children.length)
-      return new GroupNode(this.children.map((c, i) => c.adaptTo(node.children[i])), this.weights)
-    return super._adaptTo(node)
+  override _adaptTo(reference: NodeCollection, node: Node): Node | null{
+    if(node instanceof GroupNode && node.children.length === this.children.length) {
+      const adaptedChildren = this.children.map((c, i) => c.adaptTo(reference, node.children[i]))
+      // console.log(adaptedChildren)
+      if(!adaptedChildren.every(x => x === null))
+        return new GroupNode(adaptedChildren.map((c, i) =>
+          c ?? Object.assign(this.children[i], { metadata: "unchanged" }),
+        ), this.weights)
+    }
+    return super._adaptTo(reference, node)
   }
 
 }

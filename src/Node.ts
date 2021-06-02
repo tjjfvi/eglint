@@ -1,7 +1,10 @@
 
 import { ContextProvider } from "./Context"
+import { NodeCollection } from "./NodeCollection"
 
 export abstract class Node {
+
+  metadata?: unknown
 
   toString(context: ContextProvider): string{
     let acc = ""
@@ -22,6 +25,7 @@ export abstract class Node {
     if(existingReverse !== undefined) return existingReverse
     let similarity = this._similarityTo(node)
     if(isNaN(similarity)) similarity = node._similarityTo(this)
+    if(isNaN(similarity)) similarity = -1
     this.#similarityMemo.set(node, similarity)
     return similarity
   }
@@ -31,23 +35,38 @@ export abstract class Node {
     return NaN
   }
 
-  #adaptMemo = new WeakMap<Node, Node>()
-  adaptTo(referenceNode: Node): Node{
-    const existing = this.#adaptMemo.get(referenceNode)
-    if(existing !== undefined) return existing
-    const reconciled = this._adaptTo(referenceNode)
-    this.#adaptMemo.set(referenceNode, reconciled)
-    return reconciled
+  static readonly adaptThreshold = 0
+
+  adaptTo(reference: NodeCollection, startNode: Node): Node | null{
+    return this._adaptTo(reference, startNode) ?? this.adaptToMultiple(reference, reference)
   }
 
-  protected _adaptTo(referenceNode: Node): Node{
-    referenceNode
-    return referenceNode._applyTo(this)
+  adaptToMultiple(reference: NodeCollection, nodes: NodeCollection): Node | null{
+    let best = null
+    let bestWeight = 0
+    for(const node of nodes.findSimilarNodes(this)) {
+      const reconciled = this._adaptTo(reference, node)
+      if(!reconciled) continue
+      const reconciledWeight = reconciled.similarityTo(node)
+      if(!bestWeight || reconciledWeight > bestWeight) {
+        best = reconciled
+        bestWeight = reconciledWeight
+      }
+    }
+    return best
+    // for(const node of nodes.findSimilarNodes(this)) {
+    //   const similarity = this.similarityTo(node)
+    //   if(similarity <= Node.adaptThreshold) break
+    //   const adapted = this._adaptTo(reference, node)
+    //   if(adapted) return adapted
+    // }
+    // return null
   }
 
-  protected _applyTo(sourceNode: Node): Node{
-    sourceNode
-    return this
+  protected _adaptTo(reference: NodeCollection, node: Node): Node | null{
+    node
+    reference
+    return null
   }
 
 }

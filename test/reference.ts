@@ -1,6 +1,8 @@
 // @ts-nocheck
 /* eslint-disable */
 
+(a)-b
+
 const x = [1, 2, "abc", 5n + 6n, []]
 
 const y = {

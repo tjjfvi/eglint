@@ -5,6 +5,6 @@ export class KeywordNode extends TextNode {
 
   override compareClass = KeywordNode
   override $sameText = 1
-  override $differentText = 0
+  override $differentText = -1
 
 }
