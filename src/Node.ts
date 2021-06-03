@@ -4,6 +4,8 @@ import { ContextProvider } from "./Context"
 
 export class Node {
 
+  static priority = 0
+
   children: readonly Node[] = []
   parent: Node | null = null
   index = -1
@@ -40,7 +42,7 @@ export class Node {
     return array
   }
 
-  protected compareClass = this.constructor as new (...args: any) => Node
+  protected compareClass = this.constructor as (new (...args: any) => Node) & Omit<typeof Node, never>
   protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
 
   filterIsOptional = true

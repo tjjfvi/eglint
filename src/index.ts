@@ -12,7 +12,17 @@ import { PositionalNode } from "./PositionalNode"
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
     const name = syntaxKind(kind)
-    return { [name]: class extends Node {} }[name]
+    let priority = 0
+    if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
+      priority = 1
+
+    class BaseClass extends Node {
+
+      static override priority = priority
+
+    }
+
+    return { [name]: class extends BaseClass {} }[name]
   },
   new Map<ts.SyntaxKind, typeof Node>(),
 )
@@ -167,7 +177,10 @@ export function printTsNode(sourceFile: ts.SourceFile, node: ts.Node = sourceFil
 export function printNode(node: Node, contextProvider = new ContextProvider()){
   let acc = node.constructor.name
   if(!node.children.length)
-    acc += " " + i(node.toString(contextProvider))
+    if(node.toString !== Node.prototype.toString)
+      acc += " " + i(node.toString(contextProvider))
+    else
+      acc += " {}"
   if(node.children.length) {
     acc += " {"
     for(const child of node.children)
