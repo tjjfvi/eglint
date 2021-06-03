@@ -7,6 +7,7 @@ import { inspect } from "util"
 import { WhitespaceNode } from "./WhitespaceNode"
 import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
+import { PositionalNode } from "./PositionalNode"
 
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
@@ -61,7 +62,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
     let lastPos = tsNodeStart
     for(const child of tsChildren) {
       if(children.length)
-        children.push(parseTrivia(lastPos, child.getStart(sourceFile)))
+        children.push(new PositionalNode(parseTrivia(lastPos, child.getStart(sourceFile))))
       lastPos = child.end
       children.push(parseTsNode(child))
     }
@@ -81,10 +82,10 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
         nodes.push(new SyntaxListEntry([
-          new Node(),
-          emptyTrivia(),
-          parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
+          new PositionalNode(new Node()),
+          new PositionalNode(emptyTrivia()),
+          new PositionalNode(parseTsNode(child)),
+          new PositionalNode(parseTriviaBetween(child, nextChild)),
         ]))
         continue
       }
@@ -92,10 +93,10 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
         nodes.push(new SyntaxListEntry([
-          parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
-          new Node(),
-          emptyTrivia(),
+          new PositionalNode(parseTsNode(child)),
+          new PositionalNode(parseTriviaBetween(child, nextChild)),
+          new PositionalNode(new Node()),
+          new PositionalNode(emptyTrivia()),
         ]))
         continue
       }
@@ -103,10 +104,10 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
         throw new Error(`Encountered trailing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
       nodes.push(new SyntaxListEntry([
-        parseTsNode(child),
-        parseTriviaBetween(child, nextChild),
-        parseTsNode(nextChild),
-        parseTriviaBetween(nextChild, nextNextChild),
+        new PositionalNode(parseTsNode(child)),
+        new PositionalNode(parseTriviaBetween(child, nextChild)),
+        new PositionalNode(parseTsNode(nextChild)),
+        new PositionalNode(parseTriviaBetween(nextChild, nextNextChild)),
       ]))
       i++
     }

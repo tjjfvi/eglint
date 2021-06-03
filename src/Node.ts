@@ -5,12 +5,24 @@ import { ContextProvider } from "./Context"
 export class Node {
 
   children: readonly Node[] = []
+  parent: Node | null = null
+  index = -1
 
   constructor(args?: readonly Node[] | string){
     if(args instanceof Array)
       this.children = args
     else if(typeof args === "string")
       this.toString = () => args
+    this._applyChildren()
+  }
+
+  private _applyChildren(){
+    for(const [i, child] of this.children.entries()) {
+      if(child.parent)
+        throw new Error("Child passed to node already has a parent")
+      child.parent = this
+      child.index = i
+    }
   }
 
   // may be overriden by constructor
@@ -31,6 +43,7 @@ export class Node {
   protected compareClass = this.constructor as new (...args: any) => Node
   protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
 
+  filterIsOptional = true
   protected filter(referenceNodes: readonly this[]){
     return referenceNodes
   }
@@ -39,10 +52,10 @@ export class Node {
     let filteredNodes = this.filter(this.filterCompareClass(selectedReferenceNodes))
     if(!filteredNodes.length) {
       filteredNodes = this.filterCompareClass(allReferenceNodes)
-      filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? filteredNodes
+      filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
     }
     if(!filteredNodes.length)
-      return Node.prototype._adaptTo.call(this, null as never, filteredNodes, allReferenceNodes)
+      return this.baseAdaptTo(filteredNodes, allReferenceNodes)
     return this._adaptTo(filteredNodes[0], filteredNodes, allReferenceNodes)
   }
 
@@ -52,12 +65,28 @@ export class Node {
     allReferenceNodes: readonly Node[],
   ): Node{
     selectedReferenceNode
-    const adapted: Node = Object.create(Object.getPrototypeOf(this))
-    Object.assign(adapted, this)
+    return this.baseAdaptTo(selectedReferenceNodes, allReferenceNodes)
+  }
+
+  baseAdaptTo(selectedReferenceNodes: readonly this[], allReferenceNodes: readonly Node[]){
+    const adapted = this.clone()
     adapted.children = this.children.map(c =>
       c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),
     )
     return adapted
+  }
+
+  clone(): this{
+    const clone: this = Object.create(Object.getPrototypeOf(this))
+    Object.assign(clone, this)
+    return clone
+  }
+
+  cloneDeep(): this{
+    const clone: this = Object.create(Object.getPrototypeOf(this))
+    Object.assign(clone, this)
+    clone.children = clone.children.map(c => c.cloneDeep())
+    return clone
   }
 
 }
