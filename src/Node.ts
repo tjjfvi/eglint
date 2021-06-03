@@ -1,14 +1,17 @@
 
+import { cacheFn } from "./cacheFn"
 import { ContextProvider } from "./Context"
-import { Criterion } from "./Criterion"
-
-export interface NodeConstructorArgs {
-  text?: string | ((context: ContextProvider) => string),
-  children?: readonly Node[],
-  criteria?: readonly Criterion[],
-}
 
 export class Node {
+
+  children: readonly Node[] = []
+
+  constructor(args?: readonly Node[] | string){
+    if(args instanceof Array)
+      this.children = args
+    else if(typeof args === "string")
+      this.toString = () => args
+  }
 
   // may be overriden by constructor
   toString(context: ContextProvider): string{
@@ -18,21 +21,6 @@ export class Node {
     return acc
   }
 
-  criteria: readonly Criterion[]
-  children: readonly Node[]
-
-  constructor({ text, children, criteria }: NodeConstructorArgs = {}){
-    this.children = children ?? []
-    this.criteria = criteria ?? []
-    for(const criterion of this.criteria)
-      criterion.apply(this)
-    if(text !== undefined)
-      if(typeof text === "string")
-        this.toString = () => text
-      else
-        this.toString = text
-  }
-
   getAllNodes(array: Node[] = []): readonly Node[]{
     array.push(this)
     for(const child of this.children)
@@ -40,31 +28,50 @@ export class Node {
     return array
   }
 
-  adaptTo(referenceNodes: readonly Node[]){
-    let nodes = referenceNodes
-    let adapter = defaultAdapter
-    for(const criterion of this.criteria) {
-      const narrowed = criterion.select(this, nodes)
-      if(narrowed.length === 0)
-        continue // Skip this criterion
-      nodes = narrowed
-      adapter = criterion.adapter ?? adapter
-      if(narrowed.length === 1)
-        break // No need to narrow further
+  protected compareClass = this.constructor as new (...args: any) => Node
+  protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
+
+  protected filter(referenceNodes: readonly this[]){
+    return referenceNodes
+  }
+
+  adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
+    let filteredNodes = this.filter(this.filterCompareClass(selectedReferenceNodes))
+    if(!filteredNodes.length) {
+      filteredNodes = this.filterCompareClass(allReferenceNodes)
+      filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? filteredNodes
     }
-    const [selectedNode] = nodes
-    const adapted = adapter(this, selectedNode, referenceNodes)
+    if(!filteredNodes.length)
+      return Node.prototype._adaptTo.call(this, null as never, filteredNodes, allReferenceNodes)
+    return this._adaptTo(filteredNodes[0], filteredNodes, allReferenceNodes)
+  }
+
+  protected _adaptTo(
+    selectedReferenceNode: this,
+    selectedReferenceNodes: readonly this[],
+    allReferenceNodes: readonly Node[],
+  ): Node{
+    selectedReferenceNode
+    const adapted: Node = Object.create(Object.getPrototypeOf(this))
+    Object.assign(adapted, this)
+    adapted.children = this.children.map(c =>
+      c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),
+    )
     return adapted
   }
 
 }
 
-export type Adapter = typeof defaultAdapter
-function defaultAdapter(source: Node, selectedReferenceNode: Node, referenceNodes: readonly Node[]): Node{
-  selectedReferenceNode
-  return new Node({
-    text: source.toString,
-    children: source.children.map(child => child.adaptTo(referenceNodes)),
-    criteria: source.criteria,
-  })
+function nullifyEmptyArray<T>(array: readonly T[]){
+  return array.length ? array : null
 }
+
+const filterInstanceOf = cacheFn(
+  (ctor: new (...args: any) => Node) =>
+    cacheFn(
+      (nodes: readonly Node[]) =>
+        nodes.filter(n => n instanceof ctor),
+      new WeakMap(),
+    ),
+  new WeakMap(),
+)
