@@ -1,72 +1,70 @@
 
 import { ContextProvider } from "./Context"
-import { NodeCollection } from "./NodeCollection"
+import { Criterion } from "./Criterion"
 
-export abstract class Node {
+export interface NodeConstructorArgs {
+  text?: string | ((context: ContextProvider) => string),
+  children?: readonly Node[],
+  criteria?: readonly Criterion[],
+}
 
-  metadata?: unknown
+export class Node {
 
+  // may be overriden by constructor
   toString(context: ContextProvider): string{
     let acc = ""
-    for(const child of this.getChildren())
+    for(const child of this.children)
       acc += child.toString(context)
     return acc
   }
 
-  getChildren(): Iterable<Node>{
-    return []
+  criteria: readonly Criterion[]
+  children: readonly Node[]
+
+  constructor({ text, children, criteria }: NodeConstructorArgs = {}){
+    this.children = children ?? []
+    this.criteria = criteria ?? []
+    for(const criterion of this.criteria)
+      criterion.apply(this)
+    if(text !== undefined)
+      if(typeof text === "string")
+        this.toString = () => text
+      else
+        this.toString = text
   }
 
-  #similarityMemo = new WeakMap<Node, number>()
-  similarityTo(node: Node): number{
-    const existing = this.#similarityMemo.get(node)
-    if(existing !== undefined) return existing
-    const existingReverse = node.#similarityMemo.get(node)
-    if(existingReverse !== undefined) return existingReverse
-    let similarity = this._similarityTo(node)
-    if(isNaN(similarity)) similarity = node._similarityTo(this)
-    if(isNaN(similarity)) similarity = -1
-    this.#similarityMemo.set(node, similarity)
-    return similarity
+  getAllNodes(array: Node[] = []): readonly Node[]{
+    array.push(this)
+    for(const child of this.children)
+      child.getAllNodes(array)
+    return array
   }
 
-  protected _similarityTo(node: Node): number{
-    node
-    return NaN
-  }
-
-  static readonly adaptThreshold = 0
-
-  adaptTo(reference: NodeCollection, startNode: Node): Node | null{
-    return this._adaptTo(reference, startNode) ?? this.adaptToMultiple(reference, reference)
-  }
-
-  adaptToMultiple(reference: NodeCollection, nodes: NodeCollection): Node | null{
-    let best = null
-    let bestWeight = 0
-    for(const node of nodes.findSimilarNodes(this)) {
-      const reconciled = this._adaptTo(reference, node)
-      if(!reconciled) continue
-      const reconciledWeight = reconciled.similarityTo(node)
-      if(!bestWeight || reconciledWeight > bestWeight) {
-        best = reconciled
-        bestWeight = reconciledWeight
-      }
+  adaptTo(referenceNodes: readonly Node[]){
+    let nodes = referenceNodes
+    let adapter = defaultAdapter
+    for(const criterion of this.criteria) {
+      const narrowed = criterion.select(this, nodes)
+      if(narrowed.length === 0)
+        continue // Skip this criterion
+      nodes = narrowed
+      adapter = criterion.adapter ?? adapter
+      if(narrowed.length === 1)
+        break // No need to narrow further
     }
-    return best
-    // for(const node of nodes.findSimilarNodes(this)) {
-    //   const similarity = this.similarityTo(node)
-    //   if(similarity <= Node.adaptThreshold) break
-    //   const adapted = this._adaptTo(reference, node)
-    //   if(adapted) return adapted
-    // }
-    // return null
+    const [selectedNode] = nodes
+    const adapted = adapter(this, selectedNode, referenceNodes)
+    return adapted
   }
 
-  protected _adaptTo(reference: NodeCollection, node: Node): Node | null{
-    node
-    reference
-    return null
-  }
+}
 
+export type Adapter = typeof defaultAdapter
+function defaultAdapter(source: Node, selectedReferenceNode: Node, referenceNodes: readonly Node[]): Node{
+  selectedReferenceNode
+  return new Node({
+    text: source.toString,
+    children: source.children.map(child => child.adaptTo(referenceNodes)),
+    criteria: source.criteria,
+  })
 }

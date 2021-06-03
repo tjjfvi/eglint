@@ -2,18 +2,26 @@
 import ts from "typescript"
 import { readFileSync } from "fs"
 import { Node } from "./Node"
-import { GroupNode } from "./GroupNode"
-import { SpaceNode } from "./SpaceNode"
-import { NewlineNode } from "./NewlineNode"
-import { WhitespaceNode } from "./WhitespaceNode"
-import { TextNode } from "./TextNode"
-import { PunctuationNode } from "./PunctuationNode"
-import { KeywordNode } from "./KeywordNode"
-import { ContextProvider } from "./Context"
+import { Context, ContextProvider } from "./Context"
 import { inspect } from "util"
-import { IdentifierNode } from "./IdentifierNode"
-import { EmptyNode } from "./EmptyNode"
-import { ListNode } from "./ListNode"
+import { Criterion, DataCriterion, PresenceCriterion } from "./Criterion"
+
+const $isExpression = new DataCriterion<boolean>()
+const $kind = new DataCriterion<ts.SyntaxKind | string>()
+
+const $whitespace = new PresenceCriterion((_, reference) => reference)
+const $newline = new DataCriterion<number>((_, reference) => reference)
+const $punctuation = new DataCriterion<string>()
+const $keyword = new DataCriterion<string>()
+
+const criterionNameLookup = {
+  $isExpression,
+  $kind,
+  $whitespace,
+  $newline,
+  $punctuation,
+  $keyword,
+}
 
 const file = (path: string) => readFileSync(require.resolve(path), "utf8")
 
@@ -46,35 +54,31 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
   return parseTsNode(sourceFile)
 
   function parseTsNode(tsNode: ts.Node): Node{
-    const children = getTsChildren(tsNode)
+    const tsChildren = getTsChildren(tsNode)
     const tsNodeStart = tsNode === sourceFile ? tsNode.getFullStart() : tsNode.getStart(sourceFile)
     const text = source.slice(tsNodeStart, tsNode.end)
-    if(tsNode.kind === ts.SyntaxKind.Identifier)
-      return new IdentifierNode(text)
-    if(tsNode.kind >= ts.SyntaxKind.FirstPunctuation && tsNode.kind <= ts.SyntaxKind.LastPunctuation)
-      return new PunctuationNode(text)
-    if(tsNode.kind >= ts.SyntaxKind.FirstKeyword && tsNode.kind <= ts.SyntaxKind.LastKeyword)
-      return new KeywordNode(text)
     if(tsNode.kind === ts.SyntaxKind.EndOfFileToken)
-      return new EmptyNode()
+      return new Node()
+    if(tsNode.kind >= ts.SyntaxKind.FirstPunctuation && tsNode.kind <= ts.SyntaxKind.LastPunctuation)
+      return new Node({ text, criteria: [$punctuation.for(text)] })
+    if(tsNode.kind >= ts.SyntaxKind.FirstKeyword && tsNode.kind <= ts.SyntaxKind.LastKeyword)
+      return new Node({ text, criteria: [$keyword.for(text)] })
+    const criteria = [$isExpression.for(isExpressionNode(tsNode)), $kind.for(tsNode.kind)]
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
-      return parseTsSyntaxList(tsNode as ts.SyntaxList)
-    if(!children.length) {
-      if(!isExpressionNode(tsNode))
-        x.add(syntaxKind(tsNode.kind))
-      return new TextNode(text)
-    }
-    let nodes = []
+      return parseTsSyntaxList(tsNode as ts.SyntaxList, criteria)
+    if(!tsChildren.length)
+      return new Node({ text, criteria })
+    let children = []
     let lastPos = tsNodeStart
-    for(const child of children) {
-      nodes.push(parseTrivia(lastPos, child.getStart(sourceFile)))
+    for(const child of tsChildren) {
+      children.push(parseTrivia(lastPos, child.getStart(sourceFile)))
       lastPos = child.end
-      nodes.push(parseTsNode(child))
+      children.push(parseTsNode(child))
     }
-    return new GroupNode(nodes)
+    return new Node({ children, criteria })
   }
 
-  function parseTsSyntaxList(tsNode: ts.SyntaxList){
+  function parseTsSyntaxList(tsNode: ts.SyntaxList, criteria: readonly Criterion[]){
     const config = syntaxListConfig[tsNode.parent.kind]
     if(!config) throw new Error("Unhandled SyntaxList parent " + syntaxKind(tsNode.parent.kind))
     const [sparse, trailing, optionalSeparator, separatorKind] = config
@@ -86,37 +90,43 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(child.kind === separatorKind) {
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new GroupNode([
-          new EmptyNode(),
-          new EmptyNode(),
-          parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
-        ]))
+        nodes.push(new Node({
+          children: [
+            new Node(),
+            emptyTrivia(),
+            parseTsNode(child),
+            parseTriviaBetween(child, nextChild),
+          ],
+        }))
         continue
       }
       if(nextChild?.kind !== separatorKind) {
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new GroupNode([
-          parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
-          new EmptyNode(),
-          new EmptyNode(),
-        ]))
+        nodes.push(new Node({
+          children: [
+            parseTsNode(child),
+            parseTriviaBetween(child, nextChild),
+            new Node(),
+            emptyTrivia(),
+          ],
+        }))
         continue
       }
       if(nextChild && i === children.length - 2 && !trailing)
         throw new Error(`Encountered trailing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(new GroupNode([
-        parseTsNode(child),
-        parseTriviaBetween(child, nextChild),
-        parseTsNode(nextChild),
-        parseTriviaBetween(nextChild, nextNextChild),
-      ]))
+      nodes.push(new Node({
+        children: [
+          parseTsNode(child),
+          parseTriviaBetween(child, nextChild),
+          parseTsNode(nextChild),
+          parseTriviaBetween(nextChild, nextNextChild),
+        ],
+      }))
       i++
     }
-    return new ListNode(nodes)
+    return new Node({ children: nodes, criteria })
   }
 
   function getTsChildren(node: ts.Node){
@@ -124,8 +134,12 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function parseTriviaBetween(a?: ts.Node, b?: ts.Node){
-    if(!a || !b) return new EmptyNode()
+    if(!a || !b) return emptyTrivia()
     return parseTrivia(a.end, b.getStart(sourceFile))
+  }
+
+  function emptyTrivia(){
+    return new Node()
   }
 
   function parseTrivia(start: number, end: number){
@@ -139,16 +153,39 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       const curInd = ind
       ind += match.length
       if(match[0] === " ")
-        children.push(new SpaceNode(match.length))
+        children.push(new Node({ text: match }))
       else if(match[0] === "\n") {
         const deltaIndent = indentDeltas.get(start + curInd + 1)
         if(deltaIndent === undefined) throw new Error("Invalid state")
-        children.push(new NewlineNode(deltaIndent))
+        children.push(newlineNode(deltaIndent))
       }
       // else children.push(new TextNode(match))
     }
-    return new WhitespaceNode(children)
+    return new Node({ children, criteria: [$whitespace] })
   }
+
+  function newlineNode(deltaIndent: number){
+    return new Node({
+      text: contextProvider => {
+        const indentation = contextProvider.getContext(IndentationContext)
+        indentation.level += deltaIndent
+        return "\n" + indentation
+      },
+      criteria: [$newline.for(deltaIndent)],
+    })
+  }
+}
+
+class IndentationContext extends Context {
+
+  level = 0
+
+  override toString(){
+    if(this.level < 0)
+      return "!!".repeat(-this.level)
+    return "  ".repeat(this.level)
+  }
+
 }
 
 export function printTsNode(sourceFile: ts.SourceFile, node: ts.Node = sourceFile, indent = 0){
@@ -165,15 +202,34 @@ export function printTsNode(sourceFile: ts.SourceFile, node: ts.Node = sourceFil
   if(children.length) console.log("| ".repeat(indent) + "},")
 }
 
-export function printNode(node: Node, contextProvider = new ContextProvider(), indent = 0){
-  const children = [...node.getChildren()]
-  console.log(
-    "| ".repeat(indent) + node.constructor.name,
-    ...(node.metadata ? [i(node.metadata)] : []),
-    (children.length ? "{" : i(node.toString(contextProvider)) + ","),
-  )
-  for(const child of children) printNode(child, contextProvider, indent + 1)
-  if(children.length) console.log("| ".repeat(indent) + "},")
+export function printNode(node: Node, contextProvider = new ContextProvider()){
+  let acc = ""
+  acc += "Node"
+  if(!node.children.length)
+    acc += " " + i(node.toString(contextProvider))
+  if(node.children.length)
+    acc += " {"
+  if(node.criteria.length) {
+    let obj: Record<string, unknown> = {}
+    for(let criterion of node.criteria) {
+      if(criterion instanceof DataCriterion && "apply" in criterion)
+        criterion = Object.getPrototypeOf(criterion)
+      const criterionName =
+        Object.entries(criterionNameLookup).find(x => x[1] === criterion)?.[0].slice(1) ?? criterion.constructor.name
+      if(node.children.length)
+        acc += "\n  " + criterionName + ": " + i(criterion.classify(node))
+      else
+        obj[criterionName] = criterion.classify(node)
+    }
+    if(!node.children.length)
+      acc += " " + i(obj)
+  }
+  if(node.children.length) {
+    for(const child of node.children)
+      acc += "\n" + printNode(child, contextProvider).replace(/^/gm, "  ")
+    acc += "\n}"
+  }
+  return acc
 }
 
 const isExpressionNode = (ts as any).isExpressionNode as (node: ts.Node) => boolean
@@ -191,8 +247,8 @@ function syntaxKind(kind: ts.SyntaxKind){
 
 const referenceTsNode = ts.createSourceFile("reference", file("../test/reference.ts"), ts.ScriptTarget.ES2020, true)
 const referenceNode = parseTsSourceFile(referenceTsNode)
-// const sourceTsNode = ts.createSourceFile("reference", file("../test/source.ts"), ts.ScriptTarget.ES2020, true)
-// const sourceNode = parseTsSourceFile(sourceTsNode)
+const sourceTsNode = ts.createSourceFile("reference", file("../test/source.ts"), ts.ScriptTarget.ES2020, true)
+const sourceNode = parseTsSourceFile(sourceTsNode)
 
 // const sourceNode =
 //   new ListNode([
@@ -209,16 +265,14 @@ const referenceNode = parseTsSourceFile(referenceTsNode)
 //     new GroupNode([new TextNode("c"), new WhitespaceNode([new TextNode("B ")])]),
 //   ])
 
-// const _outputNode = referenceNode.adaptTo(new NodeCollection(referenceNode), referenceNode)
-// const outputNode = _outputNode ?? sourceNode
+const outputNode = referenceNode.adaptTo(referenceNode.getAllNodes())
 
 console.log(printTsNode(referenceTsNode))
 console.log(printNode(referenceNode))
 
-console.log(x)
-// console.log(
-//   outputNode
-//   // (sourceNode.adaptTo(reference, referenceNode) ?? sourceNode)
-//     .toString(new ContextProvider()),
-// )
+console.log(
+  outputNode
+  // (sourceNode.adaptTo(reference, referenceNode) ?? sourceNode)
+    .toString(new ContextProvider()),
+)
 
