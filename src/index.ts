@@ -30,7 +30,20 @@ const nodeClassForSyntaxKind = cacheFn(
 )
 
 const SyntaxListNode = nodeClassForSyntaxKind(ts.SyntaxKind.SyntaxList)
-class SyntaxListEntry extends Node {}
+class SyntaxListEntryNode extends Node {
+
+  constructor(public final: boolean, children: readonly Node[]){
+    super(children)
+  }
+
+  override filterIsOptional = false
+  override filter(nodes: readonly this[]){
+    return nodes.filter(x => x.final === this.final)
+  }
+
+}
+
+class EmptyNode extends Node {}
 
 const file = (path: string) => readFileSync(require.resolve(path), "utf8")
 
@@ -93,8 +106,8 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(child.kind === separatorKind) {
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntry([
-          new PositionalNode(new Node()),
+        nodes.push(new SyntaxListEntryNode(!nextChild, [
+          new EmptyNode(),
           emptyTrivia(),
           new PositionalNode(parseTsNode(child)),
           parseTriviaBetween(child, nextChild),
@@ -104,10 +117,10 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(nextChild?.kind !== separatorKind) {
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntry([
-          new PositionalNode(parseTsNode(child)),
+        nodes.push(new SyntaxListEntryNode(!nextChild, [
+          parseTsNode(child),
           parseTriviaBetween(child, nextChild),
-          new PositionalNode(new Node()),
+          new EmptyNode(),
           emptyTrivia(),
         ]))
         continue
@@ -115,7 +128,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(nextChild && i === children.length - 2 && !trailing)
         throw new Error(`Encountered trailing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(new SyntaxListEntry([
+      nodes.push(new SyntaxListEntryNode(!nextNextChild, [
         new PositionalNode(parseTsNode(child)),
         parseTriviaBetween(child, nextChild),
         new PositionalNode(parseTsNode(nextChild)),
