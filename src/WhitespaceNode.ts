@@ -5,8 +5,8 @@ export class WhitespaceNode extends Node {
 
   static override priority = -1
 
-  override _adaptTo(reference: this){
-    return reference
+  override adaptTo(selectedReferenceNodes: readonly Node[]): Node{
+    return this.filterCompareClass(selectedReferenceNodes)[0] ?? this.cloneDeep()
   }
 
 }

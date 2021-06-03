@@ -8,6 +8,8 @@ import { WhitespaceNode } from "./WhitespaceNode"
 import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
 import { PositionalNode } from "./PositionalNode"
+import { SpaceNode } from "./SpaceNode"
+import { WhitespacePositionalNode } from "./WhitespacePositionalNode"
 
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
@@ -72,7 +74,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
     let lastPos = tsNodeStart
     for(const child of tsChildren) {
       if(children.length)
-        children.push(new PositionalNode(parseTrivia(lastPos, child.getStart(sourceFile))))
+        children.push(parseTrivia(lastPos, child.getStart(sourceFile)))
       lastPos = child.end
       children.push(parseTsNode(child))
     }
@@ -93,9 +95,9 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
           throw new Error(`Encountered double separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
         nodes.push(new SyntaxListEntry([
           new PositionalNode(new Node()),
-          new PositionalNode(emptyTrivia()),
+          emptyTrivia(),
           new PositionalNode(parseTsNode(child)),
-          new PositionalNode(parseTriviaBetween(child, nextChild)),
+          parseTriviaBetween(child, nextChild),
         ]))
         continue
       }
@@ -104,9 +106,9 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
           throw new Error(`Encountered missing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
         nodes.push(new SyntaxListEntry([
           new PositionalNode(parseTsNode(child)),
-          new PositionalNode(parseTriviaBetween(child, nextChild)),
+          parseTriviaBetween(child, nextChild),
           new PositionalNode(new Node()),
-          new PositionalNode(emptyTrivia()),
+          emptyTrivia(),
         ]))
         continue
       }
@@ -115,9 +117,9 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       const nextNextChild = children[i + 2] as ts.Node | undefined
       nodes.push(new SyntaxListEntry([
         new PositionalNode(parseTsNode(child)),
-        new PositionalNode(parseTriviaBetween(child, nextChild)),
+        parseTriviaBetween(child, nextChild),
         new PositionalNode(parseTsNode(nextChild)),
-        new PositionalNode(parseTriviaBetween(nextChild, nextNextChild)),
+        parseTriviaBetween(nextChild, nextNextChild),
       ]))
       i++
     }
@@ -134,7 +136,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function emptyTrivia(){
-    return new WhitespaceNode()
+    return new WhitespacePositionalNode(new WhitespaceNode())
   }
 
   function parseTrivia(start: number, end: number){
@@ -148,7 +150,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       const curInd = ind
       ind += match.length
       if(match[0] === " ")
-        children.push(new WhitespaceNode(match))
+        children.push(new SpaceNode(match.length))
       else if(match[0] === "\n") {
         const deltaIndent = indentDeltas.get(start + curInd + 1)
         if(deltaIndent === undefined) throw new Error("Invalid state")
@@ -156,7 +158,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       }
       // else children.push(new TextNode(match))
     }
-    return new WhitespaceNode(children)
+    return new WhitespacePositionalNode(new WhitespaceNode(children))
   }
 }
 
@@ -175,7 +177,7 @@ export function printTsNode(sourceFile: ts.SourceFile, node: ts.Node = sourceFil
 }
 
 export function printNode(node: Node, contextProvider = new ContextProvider()){
-  let acc = node.constructor.name
+  let acc = `${node.constructor.name} #${node.id}`
   if(!node.children.length)
     if(node.toString !== Node.prototype.toString)
       acc += " " + i(node.toString(contextProvider))
@@ -223,10 +225,12 @@ const sourceNode = parseTsSourceFile(sourceTsNode)
 //     new GroupNode([new TextNode("c"), new WhitespaceNode([new TextNode("B ")])]),
 //   ])
 
+console.log(printNode(referenceNode))
+console.log(printNode(sourceNode))
+
 const outputNode = sourceNode.adaptTo([], referenceNode.getAllNodes())
 
-console.log(printTsNode(referenceTsNode))
-console.log(printNode(referenceNode))
+console.log(printNode(outputNode))
 
 console.log(
   outputNode

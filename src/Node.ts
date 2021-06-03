@@ -2,10 +2,13 @@
 import { cacheFn } from "./cacheFn"
 import { ContextProvider } from "./Context"
 
+let idN = 0
+
 export class Node {
 
   static priority = 0
 
+  id = idN++
   children: readonly Node[] = []
   parent: Node | null = null
   index = -1
@@ -50,12 +53,29 @@ export class Node {
     return referenceNodes
   }
 
-  adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
+  select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
     let filteredNodes = this.filter(this.filterCompareClass(selectedReferenceNodes))
     if(!filteredNodes.length) {
+      if(!allReferenceNodes.length)
+        return []
       filteredNodes = this.filterCompareClass(allReferenceNodes)
       filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
     }
+    if(filteredNodes.length > 1)
+      for(const priority of new Set(this.children.map(x => x.compareClass.priority).sort((a, b) => b - a))) {
+        let filteredChildrenNodes: readonly Node[] = filteredNodes.flatMap(x => x.children)
+        for(const child of this.children)
+          if(child.compareClass.priority === priority)
+            filteredChildrenNodes = child.select(filteredChildrenNodes, [])
+        if(!filteredChildrenNodes.length) continue
+        filteredNodes = [...new Set(filteredChildrenNodes.map(x => x.parent))] as this[]
+        if(filteredNodes.length === 1) break
+      }
+    return filteredNodes
+  }
+
+  adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
+    const filteredNodes = this.select(selectedReferenceNodes, allReferenceNodes)
     if(!filteredNodes.length)
       return this.baseAdaptTo(filteredNodes, allReferenceNodes)
     return this._adaptTo(filteredNodes[0], filteredNodes, allReferenceNodes)
@@ -81,6 +101,9 @@ export class Node {
   clone(): this{
     const clone: this = Object.create(Object.getPrototypeOf(this))
     Object.assign(clone, this)
+    clone.id = idN++
+    clone.parent = null
+    clone.index = -1
     return clone
   }
 
@@ -88,6 +111,7 @@ export class Node {
     const clone: this = Object.create(Object.getPrototypeOf(this))
     Object.assign(clone, this)
     clone.children = clone.children.map(c => c.cloneDeep())
+    clone._applyChildren()
     return clone
   }
 
