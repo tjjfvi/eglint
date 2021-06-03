@@ -6,7 +6,7 @@ let idN = 0
 
 export class Node {
 
-  static priority = 0
+  priority = 0
 
   id = idN++
   children: readonly Node[] = []
@@ -62,10 +62,10 @@ export class Node {
       filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
     }
     if(filteredNodes.length > 1)
-      for(const priority of new Set(this.children.map(x => x.compareClass.priority).sort((a, b) => b - a))) {
+      for(const priority of new Set(this.children.map(x => x.priority).sort((a, b) => b - a))) {
         let filteredChildrenNodes: readonly Node[] = filteredNodes.flatMap(x => x.children)
         for(const child of this.children)
-          if(child.compareClass.priority === priority)
+          if(child.priority === priority)
             filteredChildrenNodes = child.select(filteredChildrenNodes, [])
         if(!filteredChildrenNodes.length) continue
         filteredNodes = [...new Set(filteredChildrenNodes.map(x => x.parent))] as this[]

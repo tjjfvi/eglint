@@ -9,7 +9,6 @@ import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
 import { PositionalNode } from "./PositionalNode"
 import { SpaceNode } from "./SpaceNode"
-import { WhitespacePositionalNode } from "./WhitespacePositionalNode"
 
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
@@ -20,7 +19,7 @@ const nodeClassForSyntaxKind = cacheFn(
 
     class BaseClass extends Node {
 
-      static override priority = priority
+      override priority = priority
 
     }
 
@@ -149,7 +148,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function emptyTrivia(){
-    return new WhitespacePositionalNode(new WhitespaceNode())
+    return new PositionalNode(new WhitespaceNode())
   }
 
   function parseTrivia(start: number, end: number){
@@ -171,7 +170,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       }
       // else children.push(new TextNode(match))
     }
-    return new WhitespacePositionalNode(new WhitespaceNode(children))
+    return new PositionalNode(new WhitespaceNode(children))
   }
 }
 
