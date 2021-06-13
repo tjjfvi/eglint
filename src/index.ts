@@ -9,6 +9,7 @@ import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
 import { PositionalNode } from "./PositionalNode"
 import { SpaceNode } from "./SpaceNode"
+import { IndentNode } from "./IndentNode"
 
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
@@ -101,7 +102,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       lastPos = child.end
       children.push(parseTsNode(child))
     }
-    return new NodeClass(children)
+    return new NodeClass(finishTrivia(children))
   }
 
   function parseTsSyntaxList(tsNode: ts.SyntaxList){
@@ -116,34 +117,34 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(child.kind === separatorKind) {
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode(!nextChild, [
+        nodes.push(new SyntaxListEntryNode(!nextChild, finishTrivia([
           new EmptyNode(),
           emptyTrivia(),
           new PositionalNode(parseTsNode(child)),
           parseTriviaBetween(child, nextChild),
-        ]))
+        ])))
         continue
       }
       if(nextChild?.kind !== separatorKind) {
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode(!nextChild, [
+        nodes.push(new SyntaxListEntryNode(!nextChild, finishTrivia([
           parseTsNode(child),
           parseTriviaBetween(child, nextChild),
           new EmptyNode(),
           emptyTrivia(),
-        ]))
+        ])))
         continue
       }
       if(nextChild && i === children.length - 2 && !trailing)
         throw new Error(`Encountered trailing separator in ${syntaxKind(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(new SyntaxListEntryNode(!nextNextChild, [
+      nodes.push(new SyntaxListEntryNode(!nextNextChild, finishTrivia([
         new PositionalNode(parseTsNode(child)),
         parseTriviaBetween(child, nextChild),
         new PositionalNode(parseTsNode(nextChild)),
         parseTriviaBetween(nextChild, nextNextChild),
-      ]))
+      ])))
       i++
     }
     return new SyntaxListNode(nodes)
@@ -160,6 +161,18 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
 
   function emptyTrivia(){
     return new PositionalNode(new WhitespaceNode([]))
+  }
+
+  function finishTrivia(children: Node[]){
+    let deltaIndent = 0
+    for(const child of children)
+      if(child instanceof PositionalNode)
+        if(child.children[0] instanceof WhitespaceNode)
+          for(const node of child.children[0].children)
+            if(node instanceof NewlineNode)
+              deltaIndent += node.deltaIndent
+    children.push(new IndentNode(-deltaIndent))
+    return children
   }
 
   function parseTrivia(start: number, end: number){
@@ -260,4 +273,3 @@ console.log(
   // (sourceNode.adaptTo(reference, referenceNode) ?? sourceNode)
     .toString(new ContextProvider()),
 )
-
