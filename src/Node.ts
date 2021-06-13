@@ -1,6 +1,7 @@
 
 import { cacheFn } from "./cacheFn"
 import { ContextProvider } from "./Context"
+import { inspect } from "./utils"
 
 let idN = 0
 
@@ -32,7 +33,7 @@ export class Node {
   }
 
   // may be overriden by constructor
-  toString(context: ContextProvider): string{
+  toString(context: ContextProvider = new ContextProvider()): string{
     let acc = ""
     for(const child of this.children)
       acc += child.toString(context)
@@ -119,6 +120,22 @@ export class Node {
     clone.children = clone.children.map(c => c.cloneDeep())
     clone._applyChildren()
     return clone
+  }
+
+  toDebugString(contextProvider = new ContextProvider()){
+    let acc = `${this.constructor.name} #${this.id}`
+    if(!this.children.length)
+      if(this.toString !== Node.prototype.toString)
+        acc += " " + inspect(this.toString(contextProvider))
+      else
+        acc += " {}"
+    if(this.children.length) {
+      acc += " {"
+      for(const child of this.children)
+        acc += "\n" + child.toDebugString(contextProvider).replace(/^/gm, "  ")
+      acc += "\n}"
+    }
+    return acc
   }
 
 }
