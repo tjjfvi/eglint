@@ -6,3 +6,8 @@ const y = {
   c: { d: "e" },
   ...{ x },
 }
+
+const foo = () => 5
+
+const bar = () =>
+  123456789

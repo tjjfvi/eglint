@@ -1,14 +1,18 @@
 
 import { readFileSync } from "fs"
 import ts from "typescript"
-import { parseTsSourceFile } from "./ts"
+import { parseTsSourceFile, printTsNode } from "./ts"
 
 const file = (path: string) => readFileSync(require.resolve(path), "utf8")
 
 const referenceTsNode = ts.createSourceFile("reference", file("../test/reference"), ts.ScriptTarget.ES2020, true)
-const referenceNode = parseTsSourceFile(referenceTsNode)
 const sourceTsNode = ts.createSourceFile("reference", file("../test/source"), ts.ScriptTarget.ES2020, true)
-const sourceNode = parseTsSourceFile(sourceTsNode)
+
+printTsNode(referenceTsNode)
+printTsNode(sourceTsNode)
+
+const referenceNode = parseTsSourceFile(referenceTsNode, false)
+const sourceNode = parseTsSourceFile(sourceTsNode, true)
 
 console.log(referenceNode.toDebugString())
 console.log(sourceNode.toDebugString())

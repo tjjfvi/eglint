@@ -64,21 +64,12 @@ const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
   [ts.SyntaxKind.ArrayLiteralExpression]: [1, 1, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.ObjectLiteralExpression]: [0, 1, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.CallExpression]: [0, 1, 0, ts.SyntaxKind.CommaToken],
+  [ts.SyntaxKind.ArrowFunction]: [0, 1, 0, ts.SyntaxKind.CommaToken],
 }
 
-export function parseTsSourceFile(sourceFile: ts.SourceFile){
+export function parseTsSourceFile(sourceFile: ts.SourceFile, isSource: boolean){
   const source = sourceFile.getFullText()
-  const indentDeltas = new Map<number, number>()
-  let curPos = 0
   let indentLevel = 0
-  for(const line of source.split("\n")) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const indents = Math.ceil(line.match(/^ */)![0].length / 2)
-    const indentDelta = indents - indentLevel
-    indentDeltas.set(curPos, indentDelta)
-    indentLevel = indents
-    curPos += line.length + 1
-  }
   return parseTsNode(sourceFile)
 
   function parseTsNode(tsNode: ts.Node): Node{
@@ -168,6 +159,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
             if(node instanceof NewlineNode)
               deltaIndent += node.deltaIndent
     children.push(new IndentNode(-deltaIndent))
+    indentLevel -= deltaIndent
     return children
   }
 
@@ -179,14 +171,13 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
     while(ind < text.length) {
       const [match] = text.slice(ind).match(regex) ?? [null]
       if(!match) throw new Error("Encountered invalid trivia")
-      const curInd = ind
       ind += match.length
       if(match[0] === " ")
         children.push(new SpaceNode(match.length))
       else if(match[0] === "\n") {
-        const deltaIndent = indentDeltas.get(start + curInd + 1)
-        if(deltaIndent === undefined) throw new Error("Invalid state")
-        children.push(new NewlineNode(deltaIndent))
+        const deltaIndent = Math.floor((match.length - 1) / 2) - indentLevel
+        indentLevel += deltaIndent
+        children.push(new NewlineNode(isSource ? 0 : deltaIndent))
       }
       // else children.push(new TextNode(match))
     }

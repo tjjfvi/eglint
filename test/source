@@ -2,6 +2,8 @@ let
 y 
   = {
       a: 1,
+      foo: () =>
+       "lalala",
 ...{x:{x:{x:5}}},   b:"c",}
 
 const blah = 
