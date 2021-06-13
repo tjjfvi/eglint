@@ -1,7 +1,7 @@
 import { Context, ContextProvider } from "./Context"
-import { WhitespaceNode } from "./WhitespaceNode"
+import { InterchangeableNode } from "./InterchangeableNode"
 
-export class NewlineNode extends WhitespaceNode {
+export class NewlineNode extends InterchangeableNode {
 
   constructor(public deltaIndent: number){
     super()

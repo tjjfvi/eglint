@@ -22,12 +22,13 @@ export class Node {
   }
 
   private _applyChildren(){
-    for(const [i, child] of this.children.entries()) {
+    this.children = this.children.map((child, i) => {
       if(child.parent)
-        throw new Error("Child passed to node already has a parent")
+        child = child.cloneDeep()
       child.parent = this
       child.index = i
-    }
+      return child
+    })
   }
 
   // may be overriden by constructor
@@ -61,15 +62,19 @@ export class Node {
       filteredNodes = this.filterCompareClass(allReferenceNodes)
       filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
     }
-    if(filteredNodes.length > 1)
+    if(filteredNodes.length > 1 && (this.children.length > 1 || !allReferenceNodes.length))
       for(const priority of new Set(this.children.map(x => x.priority).sort((a, b) => b - a))) {
-        let filteredChildrenNodes: readonly Node[] = filteredNodes.flatMap(x => x.children)
+        let currentFilteredNodes = filteredNodes
         for(const child of this.children)
-          if(child.priority === priority)
-            filteredChildrenNodes = child.select(filteredChildrenNodes, [])
-        if(!filteredChildrenNodes.length) continue
-        filteredNodes = [...new Set(filteredChildrenNodes.map(x => x.parent))] as this[]
-        if(filteredNodes.length === 1) break
+          if(child.priority === priority) {
+            const children = currentFilteredNodes.flatMap(x => x.children)
+            const filteredChildren = child.select(children, [])
+            currentFilteredNodes = [...new Set(filteredChildren.map(x => x.parent as this))]
+            if(!currentFilteredNodes.length)
+              break
+          }
+        if(currentFilteredNodes.length)
+          filteredNodes = currentFilteredNodes
       }
     return filteredNodes
   }
@@ -95,10 +100,11 @@ export class Node {
     adapted.children = this.children.map(c =>
       c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),
     )
+    adapted._applyChildren()
     return adapted
   }
 
-  clone(): this{
+  protected clone(): this{
     const clone: this = Object.create(Object.getPrototypeOf(this))
     Object.assign(clone, this)
     clone.id = idN++

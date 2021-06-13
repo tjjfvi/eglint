@@ -4,7 +4,7 @@ import { readFileSync } from "fs"
 import { Node } from "./Node"
 import { ContextProvider } from "./Context"
 import { inspect } from "util"
-import { WhitespaceNode } from "./WhitespaceNode"
+import { InterchangeableNode } from "./InterchangeableNode"
 import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
 import { PositionalNode } from "./PositionalNode"
@@ -44,6 +44,16 @@ class SyntaxListEntryNode extends Node {
 
 class EmptyNode extends Node {}
 
+class WhitespaceNode extends InterchangeableNode {
+
+  multiline = this.children.some(x => x instanceof NewlineNode)
+
+  override filter(nodes: readonly this[]){
+    return nodes.filter(x => x.multiline === this.multiline)
+  }
+
+}
+
 const file = (path: string) => readFileSync(require.resolve(path), "utf8")
 
 const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
@@ -56,6 +66,7 @@ const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
   [ts.SyntaxKind.VariableDeclarationList]: [0, 0, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.ArrayLiteralExpression]: [1, 1, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.ObjectLiteralExpression]: [0, 1, 0, ts.SyntaxKind.CommaToken],
+  [ts.SyntaxKind.CallExpression]: [0, 1, 0, ts.SyntaxKind.CommaToken],
 }
 syntaxListConfig
 function parseTsSourceFile(sourceFile: ts.SourceFile){
@@ -148,7 +159,7 @@ function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function emptyTrivia(){
-    return new PositionalNode(new WhitespaceNode())
+    return new PositionalNode(new WhitespaceNode([]))
   }
 
   function parseTrivia(start: number, end: number){

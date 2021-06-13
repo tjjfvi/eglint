@@ -1,6 +1,6 @@
-import { WhitespaceNode } from "./WhitespaceNode"
+import { InterchangeableNode } from "./InterchangeableNode"
 
-export class SpaceNode extends WhitespaceNode {
+export class SpaceNode extends InterchangeableNode {
 
   constructor(public count: number){
     super()
