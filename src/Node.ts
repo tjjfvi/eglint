@@ -55,10 +55,11 @@ export class Node {
     return referenceNodes
   }
 
+  requireContext = false
   select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
     let filteredNodes: readonly this[] = this.filterCompareClass(selectedReferenceNodes)
     filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
-    if(!filteredNodes.length) {
+    if(!filteredNodes.length && !this.requireContext) {
       if(!allReferenceNodes.length)
         return []
       filteredNodes = this.filterCompareClass(allReferenceNodes)
@@ -83,21 +84,15 @@ export class Node {
 
   adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
     const filteredNodes = this.select(selectedReferenceNodes, allReferenceNodes)
-    if(!filteredNodes.length)
-      return this.baseAdaptTo(filteredNodes, allReferenceNodes)
-    return this._adaptTo(filteredNodes[0], filteredNodes, allReferenceNodes)
+    return this._adaptTo(filteredNodes[0] ?? null, filteredNodes, allReferenceNodes)
   }
 
   protected _adaptTo(
-    selectedReferenceNode: this,
+    selectedReferenceNode: this | null,
     selectedReferenceNodes: readonly this[],
     allReferenceNodes: readonly Node[],
   ): Node{
     selectedReferenceNode
-    return this.baseAdaptTo(selectedReferenceNodes, allReferenceNodes)
-  }
-
-  baseAdaptTo(selectedReferenceNodes: readonly this[], allReferenceNodes: readonly Node[]){
     const adapted = this.clone()
     adapted.children = this.children.map(c =>
       c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),

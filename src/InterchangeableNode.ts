@@ -5,8 +5,10 @@ export class InterchangeableNode extends Node {
 
   override priority = -1
 
-  override adaptTo(selectedReferenceNodes: readonly Node[]): Node{
-    return this.filterCompareClass(selectedReferenceNodes)[0] ?? this
+  override _adaptTo(node: Node | null): Node{
+    return node ?? this
   }
+
+  override requireContext = true
 
 }

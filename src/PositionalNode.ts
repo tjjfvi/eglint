@@ -13,8 +13,6 @@ export class PositionalNode extends SingletonNode {
     return referenceNodes.filter(x => x.index === this.index)
   }
 
-  override select(selectedReferenceNodes: readonly Node[]){
-    return this.filter(this.filterCompareClass(selectedReferenceNodes))
-  }
+  override requireContext = true
 
 }
