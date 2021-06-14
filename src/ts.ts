@@ -84,7 +84,7 @@ const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
   [ts.SyntaxKind.ArrowFunction]: [0, 1, 0, ts.SyntaxKind.CommaToken],
 }
 
-export function parseTsSourceFile(sourceFile: ts.SourceFile, isSource: boolean){
+export function parseTsSourceFile(sourceFile: ts.SourceFile){
   const source = sourceFile.getFullText()
   let indentLevel = 0
   return parseTsNode(sourceFile)
@@ -194,7 +194,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile, isSource: boolean){
       else if(match[0] === "\n") {
         const deltaIndent = Math.floor((match.length - 1) / 2) - indentLevel
         indentLevel += deltaIndent
-        children.push(new NewlineNode(isSource ? 0 : deltaIndent))
+        children.push(new NewlineNode(deltaIndent))
       }
       // else children.push(new TextNode(match))
     }

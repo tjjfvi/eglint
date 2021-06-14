@@ -11,8 +11,8 @@ const sourceTsNode = ts.createSourceFile("reference", file("../test/source"), ts
 printTsNode(referenceTsNode)
 printTsNode(sourceTsNode)
 
-const referenceNode = parseTsSourceFile(referenceTsNode, false)
-const sourceNode = parseTsSourceFile(sourceTsNode, true)
+const referenceNode = parseTsSourceFile(referenceTsNode)
+const sourceNode = parseTsSourceFile(sourceTsNode)
 
 console.log(referenceNode.toDebugString())
 console.log(sourceNode.toDebugString())

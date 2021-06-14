@@ -20,8 +20,10 @@ export class IndentationContext extends Context {
   level = 0
 
   override toString(){
-    if(this.level < 0)
-      return "!!".repeat(-this.level)
+    if(this.level < 0) {
+      console.warn("Invalid indent level " + this.level)
+      return ""
+    }
     return "  ".repeat(this.level)
   }
 
