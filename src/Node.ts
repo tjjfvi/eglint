@@ -56,7 +56,8 @@ export class Node {
   }
 
   select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
-    let filteredNodes = this.filter(this.filterCompareClass(selectedReferenceNodes))
+    let filteredNodes: readonly this[] = this.filterCompareClass(selectedReferenceNodes)
+    filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
     if(!filteredNodes.length) {
       if(!allReferenceNodes.length)
         return []

@@ -9,6 +9,23 @@ import { SpaceNode } from "./SpaceNode"
 import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
 
+class TsNodeNode extends Node {
+
+  static checkMultiline(node: Node): boolean{
+    return false
+      || node instanceof TsNodeNode && node.isMultiline
+      || node instanceof NewlineNode
+      || node.children.some(TsNodeNode.checkMultiline)
+  }
+
+  isMultiline = TsNodeNode.checkMultiline(this)
+
+  override filter(referenceNodes: readonly this[]){
+    return referenceNodes.filter(x => x.isMultiline === this.isMultiline)
+  }
+
+}
+
 const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof Node => {
     const name = syntaxKindName(kind)
@@ -16,7 +33,7 @@ const nodeClassForSyntaxKind = cacheFn(
     if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
       priority = 1
 
-    class BaseClass extends Node {
+    class BaseClass extends TsNodeNode {
 
       override priority = priority
 

@@ -1,5 +1,12 @@
 const x = [1, 2, "abc", 5n + 6n, []]
 
+const abc = [
+  1,
+  2,
+  3,
+  4,
+]
+
 const y = {
   a: 1,
   b: 2,
