@@ -16,5 +16,6 @@ const y = {
 
 const foo = () => 5
 
-const bar = () =>
-  123456789
+const baz = () => {
+  return 123456789 
+}

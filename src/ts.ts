@@ -8,6 +8,7 @@ import { PositionalNode } from "./PositionalNode"
 import { SpaceNode } from "./SpaceNode"
 import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
+import { ForkNode } from "./ForkNode"
 
 class TsNodeNode extends Node {
 
@@ -58,6 +59,8 @@ class SyntaxListEntryNode extends Node {
 
 }
 
+class SwappableArrowFunctionBody extends ForkNode {}
+
 class EmptyNode extends Node {}
 
 class WhitespaceNode extends InterchangeableNode {
@@ -77,6 +80,7 @@ const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
   separatorKind: ts.SyntaxKind
 ]>> = {
   [ts.SyntaxKind.SourceFile]: [0, 1, 1, ts.SyntaxKind.SemicolonToken],
+  [ts.SyntaxKind.Block]: [0, 1, 1, ts.SyntaxKind.SemicolonToken],
   [ts.SyntaxKind.VariableDeclarationList]: [0, 0, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.ArrayLiteralExpression]: [1, 1, 0, ts.SyntaxKind.CommaToken],
   [ts.SyntaxKind.ObjectLiteralExpression]: [0, 1, 0, ts.SyntaxKind.CommaToken],
@@ -106,7 +110,46 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       lastPos = child.end
       children.push(parseTsNode(child))
     }
-    return new NodeClass(finishTrivia(children))
+    finishTrivia(children)
+    if(tsNode.kind === ts.SyntaxKind.ArrowFunction) {
+      const bodyNode = children[8]
+      const isBlock = bodyNode instanceof nodeClassForSyntaxKind(ts.SyntaxKind.Block)
+      const swappable = !isBlock || (
+        bodyNode.children[2].children.length === 1
+        && bodyNode.children[2].children[0].children[0] instanceof nodeClassForSyntaxKind(ts.SyntaxKind.ReturnStatement)
+      )
+      if(swappable) {
+        const resultNode = isBlock
+          ? bodyNode.children[2].children[0].children[0].children[2]
+          : bodyNode
+        const space = () => new PositionalNode(new WhitespaceNode([new SpaceNode(1)]))
+        const alternative = isBlock
+          ? resultNode
+          : new (nodeClassForSyntaxKind(ts.SyntaxKind.Block))([
+            new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("{"),
+            space(),
+            new SyntaxListNode([
+              new SyntaxListEntryNode(true, [
+                new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnStatement))([
+                  new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnKeyword))("return"),
+                  space(),
+                  resultNode,
+                  new IndentNode(0),
+                ]),
+                emptyTrivia(),
+                new EmptyNode(),
+                emptyTrivia(),
+                new IndentNode(0),
+              ]),
+            ]),
+            space(),
+            new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("}"),
+            new IndentNode(0),
+          ])
+        children[8] = new SwappableArrowFunctionBody(bodyNode, [alternative])
+      }
+    }
+    return new NodeClass(children)
   }
 
   function parseTsSyntaxList(tsNode: ts.SyntaxList){
