@@ -3,10 +3,10 @@ import { readFileSync } from "fs"
 import ts from "typescript"
 import { parseTsSourceFile, printTsNode } from "./ts"
 
-const file = (path: string) => readFileSync(require.resolve(path), "utf8")
+const file = (path: string) => readFileSync(path, "utf8")
 
-const referenceTsNode = ts.createSourceFile("reference", file("../test/reference"), ts.ScriptTarget.ES2020, true)
-const sourceTsNode = ts.createSourceFile("reference", file("../test/source"), ts.ScriptTarget.ES2020, true)
+const referenceTsNode = ts.createSourceFile("reference", file(process.argv[2]), ts.ScriptTarget.ES2020, true)
+const sourceTsNode = ts.createSourceFile("reference", file(process.argv[3]), ts.ScriptTarget.ES2020, true)
 
 printTsNode(referenceTsNode)
 printTsNode(sourceTsNode)

@@ -4,7 +4,7 @@ y
       a: 1,
       foo: () =>
        `lalala`,
-...{x:{x:{x:5}}},   b:"\"",}
+...{x:{x:{x:5}}},   b:"aaa\"aaa",}
 
 const blah = 
 
