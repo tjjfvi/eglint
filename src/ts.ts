@@ -1,6 +1,6 @@
 
 import ts from "typescript"
-import { Node } from "./Node"
+import { Node, nullifyEmptyArray } from "./Node"
 import { InterchangeableNode } from "./InterchangeableNode"
 import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
@@ -73,6 +73,64 @@ class WhitespaceNode extends InterchangeableNode {
 
 }
 
+enum StringLiteralEscapes {
+  Single = 1 << 0,
+  Double = 1 << 1,
+  Backtick = 1 << 2,
+}
+
+class StringLiteralNode extends Node {
+
+  quote = this.text[0]
+  innerText = this.text.slice(1, -1)
+  escapes = 0
+    | (this.innerText.includes("'") ? StringLiteralEscapes.Single : 0)
+    | (this.innerText.includes('"') ? StringLiteralEscapes.Double : 0)
+    | (this.innerText.includes("`") ? StringLiteralEscapes.Backtick : 0)
+
+  constructor(public text: string){
+    super(text)
+  }
+
+  override filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
+    const allStringReferenceNodes = this.filterCompareClass(allReferenceNodes ?? [])
+    referenceNodes = null
+      ?? nullifyEmptyArray(this.filterEscapesEqual(referenceNodes))
+      ?? nullifyEmptyArray(this.filterEscapesEqual(allStringReferenceNodes))
+      ?? nullifyEmptyArray(this.filterEscapesSubset(referenceNodes))
+      ?? nullifyEmptyArray(this.filterEscapesSubset(allStringReferenceNodes))
+      ?? allStringReferenceNodes
+    referenceNodes = null
+      ?? nullifyEmptyArray(this.filterEqualQuotes(referenceNodes))
+      ?? referenceNodes
+    return referenceNodes
+  }
+
+  filterEqualQuotes(nodes: readonly this[]){
+    return nodes.filter(x => x.quote === this.quote)
+  }
+
+  filterEscapesSubset(nodes: readonly this[]){
+    return nodes.filter(x => (x.escapes & this.escapes) === x.escapes)
+  }
+
+  filterEscapesEqual(nodes: readonly this[]){
+    return nodes.filter(x => x.escapes === this.escapes)
+  }
+
+  override _adaptTo(selectedNode: this | null){
+    if(!selectedNode || selectedNode.quote === this.quote) return this
+    const newQuote = selectedNode.quote
+    const escapedInnerText = this.innerText
+      // If the length is even (like `\"`), it's already escaped
+      .replace(new RegExp("\\\\*" + newQuote, "g"), x => x.length % 2 ? "\\" + x : x)
+      // Unescape old quotes; we don't need to check for length, because it must be escaped
+      .replace(new RegExp("\\\\" + this.quote, "g"), this.quote)
+    return new StringLiteralNode(newQuote + escapedInnerText + newQuote)
+  }
+
+}
+
 const syntaxListConfig: Partial<Record<ts.SyntaxKind, [
   sparse: 0 | 1,
   trailing: 0 | 1,
@@ -100,6 +158,8 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
       return parseTsSyntaxList(tsNode as ts.SyntaxList)
     const NodeClass = nodeClassForSyntaxKind(tsNode.kind)
+    if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
+      return new StringLiteralNode(text)
     if(!tsChildren.length)
       return new NodeClass(text)
     let children = []

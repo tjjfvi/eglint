@@ -51,14 +51,17 @@ export class Node {
   protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
 
   filterIsOptional = true
-  protected filter(referenceNodes: readonly this[]){
+  protected filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
+    allReferenceNodes
     return referenceNodes
   }
 
   requireContext = false
   select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
     let filteredNodes: readonly this[] = this.filterCompareClass(selectedReferenceNodes)
-    filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
+    filteredNodes = null
+      ?? nullifyEmptyArray(this.filter(filteredNodes, allReferenceNodes))
+      ?? (this.filterIsOptional ? filteredNodes : [])
     if(!filteredNodes.length && !this.requireContext) {
       if(!allReferenceNodes.length)
         return []
@@ -136,7 +139,7 @@ export class Node {
 
 }
 
-function nullifyEmptyArray<T>(array: readonly T[]){
+export function nullifyEmptyArray<T>(array: readonly T[]){
   return array.length ? array : null
 }
 
