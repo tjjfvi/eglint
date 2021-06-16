@@ -2,7 +2,7 @@
 import fs from "fs/promises"
 import { join as joinPath } from "path"
 import ts from "typescript"
-import { parseTsSourceFile } from "../../src"
+import { cacheFn, Node, parseTsSourceFile } from "../../src"
 import chalk from "chalk"
 import { printDiff } from "./diff"
 
@@ -30,19 +30,21 @@ export default async () => {
   return results
 }
 
+const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
+  const text = await file(path)
+  const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
+  const node = parseTsSourceFile(tsNode)
+  return node
+}, new Map())
+
 async function runPairing(ref: string, src: string, out: string){
   let state = ""
   try {
-    state = `reading ${chalk.bold(ref)} and ${chalk.bold(src)}`
-    const [referenceText, sourceText] = await Promise.all([file(ref), file(src)])
-
     state = `parsing ${chalk.bold(ref)}`
-    const referenceTsNode = ts.createSourceFile("reference", referenceText, ts.ScriptTarget.ES2020, true)
-    const referenceNode = parseTsSourceFile(referenceTsNode)
+    const referenceNode = await parseFile(ref)
 
     state = `parsing ${chalk.bold(src)}`
-    const sourceTsNode = ts.createSourceFile("reference", sourceText, ts.ScriptTarget.ES2020, true)
-    const sourceNode = parseTsSourceFile(sourceTsNode)
+    const sourceNode = await parseFile(src)
 
     state = `adapting ${chalk.bold(src)} to ${chalk.bold(ref)}`
     const outputNode = sourceNode.adaptTo([], referenceNode.getAllNodes())

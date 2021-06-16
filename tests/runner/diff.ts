@@ -19,7 +19,7 @@ export function printDiff(expected: string, actual: string){
 
   let output = ""
 
-  for(const diffPart of diff.diffChars(expected, actual))
+  for(const diffPart of diff.diffWords(expected, actual, { ignoreWhitespace: false }))
     for(const content of diffPart.value.split(/(\n)/)) { // "abc\ndef".split(/(\n)/) = ["abc", "\n", "def"]
       if(!content) continue
 
