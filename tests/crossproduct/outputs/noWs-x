@@ -1,6 +1,4 @@
-let y={a:1,foo:()=>{
-return "lalala" 
-},...{x:{x:{x:5}}},b:'aaa"aaa',}
+let y={a:1,foo:()=>"lalala",...{x:{x:{x:5}}},b:'aaa"aaa',}
 const blah=["abc",1+2,[[[[]]]]]
 foo(
   abc
@@ -8,6 +6,4 @@ foo(
 const a=()=>123
 const b=()=>123
 const c=()=>123
-const d=()=>{
-return 123 
-}
+const d=()=>123

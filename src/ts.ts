@@ -9,7 +9,6 @@ import { SpaceNode } from "./SpaceNode"
 import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
 import { ForkNode } from "./ForkNode"
-import { FilterGroup } from "./FilterGroup"
 
 class TsNodeNode extends Node {
 
