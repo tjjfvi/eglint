@@ -10,7 +10,7 @@ const abc = [
 const y = {
   a: 1,
   b: 2,
-  c: { d: "e" },
+  c: { d: "e", f: "g" },
   ...{ x },
 }
 

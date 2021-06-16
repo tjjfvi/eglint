@@ -1,7 +1,7 @@
 import { Node } from "./Node"
 import { SingletonNode } from "./SingletonNode"
 
-export class PositionalNode extends SingletonNode {
+export abstract class PositionalNode extends SingletonNode {
 
   constructor(child: Node){
     super(child)
