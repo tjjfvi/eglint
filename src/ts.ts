@@ -112,31 +112,22 @@ class StringLiteralNode extends Node {
     super(text)
   }
 
-  stringLiteralFilter = this.filterGroup.addFilter(new FilterGroup([
-    new FilterGroup([
-      {
-        priority: 1,
-        optional: false,
-        filter(self, nodes){
-          return nodes.filter(x => (x.escapes & self.escapes) === x.escapes)
-        },
-      },
-      {
-        priority: 0,
-        optional: true,
-        filter(self, nodes){
-          return nodes.filter(x => x.escapes === self.escapes)
-        },
-      },
-    ], 1, true),
+  stringLiteralFilter = this.filterGroup.addFilters([
     {
-      priority: 0,
+      priority: 10,
+      optional: false,
+      filter(self, nodes){
+        return nodes.filter(x => x.escapes === self.escapes)
+      },
+    },
+    {
+      priority: 9,
       optional: true,
       filter(self, nodes){
         return nodes.filter(x => x.quote === self.quote)
       },
     },
-  ], 10, true))
+  ])
 
   // filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
   //   const allStringReferenceNodes = this.filterCompareClass(allReferenceNodes ?? [])
