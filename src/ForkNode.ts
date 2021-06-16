@@ -1,4 +1,4 @@
-import { Node, nullifyEmptyArray } from "./Node"
+import { Node } from "./Node"
 import { SingletonNode } from "./SingletonNode"
 
 export class ForkNode extends SingletonNode {
@@ -7,13 +7,11 @@ export class ForkNode extends SingletonNode {
 
   constructor(current: Node, public alternatives: readonly Node[]){
     super(current)
+    this.filterGroup.filters = [] // Don't filter by children
   }
 
   private chooseOption(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
-    let filteredNodes: readonly this[] = this.filterCompareClass(selectedReferenceNodes)
-    filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
-    if(!filteredNodes.length) filteredNodes = this.filterCompareClass(allReferenceNodes)
-    filteredNodes = nullifyEmptyArray(this.filter(filteredNodes)) ?? (this.filterIsOptional ? filteredNodes : [])
+    const filteredNodes = super.select(selectedReferenceNodes, allReferenceNodes)
     const filteredChildren = filteredNodes.map(x => x.children[0])
     const optionsSelections = this.allOptions.map(option => {
       const selectedChildren = option.select(filteredChildren, [])

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "ts-node tests/runner",
+    "debug": "node --inspect-brk -r ts-node/register tests/runner",
     "index": "create-index -X ts -x ts -x tsx -Sui src/ -c {}; npm run lint"
   },
   "keywords": [],

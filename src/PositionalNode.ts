@@ -8,10 +8,13 @@ export class PositionalNode extends SingletonNode {
     this.priority = child.priority
   }
 
-  override filterIsOptional = false
-  override filter(referenceNodes: readonly this[]){
-    return referenceNodes.filter(x => x.index === this.index)
-  }
+  positionalFilter = this.filterGroup.addFilter({
+    priority: 10,
+    optional: false,
+    filter(self, nodes){
+      return nodes.filter(x => x.index === self.index)
+    },
+  })
 
   override requireContext = true
 

@@ -1,6 +1,6 @@
 
 import ts from "typescript"
-import { Node, nullifyEmptyArray } from "./Node"
+import { Node } from "./Node"
 import { InterchangeableNode } from "./InterchangeableNode"
 import { NewlineNode } from "./NewlineNode"
 import { cacheFn } from "./cacheFn"
@@ -9,6 +9,7 @@ import { SpaceNode } from "./SpaceNode"
 import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
 import { ForkNode } from "./ForkNode"
+import { FilterGroup } from "./FilterGroup"
 
 class TsNodeNode extends Node {
 
@@ -21,20 +22,30 @@ class TsNodeNode extends Node {
 
   isMultiline = TsNodeNode.checkMultiline(this)
 
-  override filter(referenceNodes: readonly this[]){
-    return referenceNodes.filter(x => x.isMultiline === this.isMultiline)
-  }
+  multilineFilter = this.filterGroup.addFilter({
+    priority: .5,
+    optional: true,
+    filter(self, nodes){
+      return nodes.filter(x => x.isMultiline === self.isMultiline)
+    },
+  })
 
 }
 
 const nodeClassForSyntaxKind = cacheFn(
-  (kind: ts.SyntaxKind): typeof Node => {
+  (kind: ts.SyntaxKind): typeof TsNodeNode => {
     const name = syntaxKindName(kind)
-    let priority = 0
+    let priority = 1
+    if(kind === ts.SyntaxKind.SyntaxList)
+      priority = .4
     if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
-      priority = 1
+      priority = 2
 
     class BaseClass extends TsNodeNode {
+
+      constructor(...args: ConstructorParameters<typeof Node>){
+        super(...args)
+      }
 
       override priority = priority
 
@@ -42,7 +53,7 @@ const nodeClassForSyntaxKind = cacheFn(
 
     return { [name]: class extends BaseClass {} }[name]
   },
-  new Map<ts.SyntaxKind, typeof Node>(),
+  new Map<ts.SyntaxKind, typeof TsNodeNode>(),
 )
 
 const SyntaxListNode = nodeClassForSyntaxKind(ts.SyntaxKind.SyntaxList)
@@ -52,10 +63,13 @@ class SyntaxListEntryNode extends Node {
     super(children)
   }
 
-  override filterIsOptional = false
-  override filter(nodes: readonly this[]){
-    return nodes.filter(x => x.final === this.final)
-  }
+  isFinalFilter = this.filterGroup.addFilter({
+    priority: 10,
+    optional: false,
+    filter(self, nodes){
+      return nodes.filter(x => x.final === self.final)
+    },
+  })
 
 }
 
@@ -67,11 +81,17 @@ class WhitespaceNode extends InterchangeableNode {
 
   multiline = this.children.some(x => x instanceof NewlineNode)
 
-  override filter(nodes: readonly this[]){
-    return nodes.filter(x => x.multiline === this.multiline)
-  }
+  // multilineFilter = this.filterGroup.addFilter({
+  //   priority: 10,
+  //   optional: true,
+  //   filter(self, nodes){
+  //     return nodes.filter(x => x.multiline === self.multiline)
+  //   },
+  // })
 
 }
+
+class WhitespacePositionalNode extends PositionalNode {}
 
 enum StringLiteralEscapes {
   Single = 1 << 0,
@@ -92,31 +112,45 @@ class StringLiteralNode extends Node {
     super(text)
   }
 
-  override filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
-    const allStringReferenceNodes = this.filterCompareClass(allReferenceNodes ?? [])
-    referenceNodes = null
-      ?? nullifyEmptyArray(this.filterEscapesEqual(referenceNodes))
-      ?? nullifyEmptyArray(this.filterEscapesEqual(allStringReferenceNodes))
-      ?? nullifyEmptyArray(this.filterEscapesSubset(referenceNodes))
-      ?? nullifyEmptyArray(this.filterEscapesSubset(allStringReferenceNodes))
-      ?? allStringReferenceNodes
-    referenceNodes = null
-      ?? nullifyEmptyArray(this.filterEqualQuotes(referenceNodes))
-      ?? referenceNodes
-    return referenceNodes
-  }
+  stringLiteralFilter = this.filterGroup.addFilter(new FilterGroup([
+    new FilterGroup([
+      {
+        priority: 1,
+        optional: false,
+        filter(self, nodes){
+          return nodes.filter(x => (x.escapes & self.escapes) === x.escapes)
+        },
+      },
+      {
+        priority: 0,
+        optional: true,
+        filter(self, nodes){
+          return nodes.filter(x => x.escapes === self.escapes)
+        },
+      },
+    ], 1, true),
+    {
+      priority: 0,
+      optional: true,
+      filter(self, nodes){
+        return nodes.filter(x => x.quote === self.quote)
+      },
+    },
+  ], 10, true))
 
-  filterEqualQuotes(nodes: readonly this[]){
-    return nodes.filter(x => x.quote === this.quote)
-  }
-
-  filterEscapesSubset(nodes: readonly this[]){
-    return nodes.filter(x => (x.escapes & this.escapes) === x.escapes)
-  }
-
-  filterEscapesEqual(nodes: readonly this[]){
-    return nodes.filter(x => x.escapes === this.escapes)
-  }
+  // filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
+  //   const allStringReferenceNodes = this.filterCompareClass(allReferenceNodes ?? [])
+  //   referenceNodes = null
+  //     ?? nullifyEmptyArray(this.filterEscapesEqual(referenceNodes))
+  //     ?? nullifyEmptyArray(this.filterEscapesEqual(allStringReferenceNodes))
+  //     ?? nullifyEmptyArray(this.filterEscapesSubset(referenceNodes))
+  //     ?? nullifyEmptyArray(this.filterEscapesSubset(allStringReferenceNodes))
+  //     ?? allStringReferenceNodes
+  //   referenceNodes = null
+  //     ?? nullifyEmptyArray(this.filterEqualQuotes(referenceNodes))
+  //     ?? referenceNodes
+  //   return referenceNodes
+  // }
 
   override _adaptTo(selectedNode: this | null){
     if(!selectedNode || selectedNode.quote === this.quote) return this
@@ -182,7 +216,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
         const resultNode = isBlock
           ? bodyNode.children[2].children[0].children[0].children[2]
           : bodyNode
-        const space = () => new PositionalNode(new WhitespaceNode([new SpaceNode(1)]))
+        const space = () => new WhitespacePositionalNode(new WhitespaceNode([new SpaceNode(1)]))
         const alternative = isBlock
           ? resultNode
           : new (nodeClassForSyntaxKind(ts.SyntaxKind.Block))([
@@ -227,7 +261,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
         nodes.push(new SyntaxListEntryNode(!nextChild, finishTrivia([
           new EmptyNode(),
           emptyTrivia(),
-          new PositionalNode(parseTsNode(child)),
+          parseTsNode(child),
           parseTriviaBetween(child, nextChild),
         ])))
         continue
@@ -247,9 +281,9 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
         throw new Error(`Encountered trailing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
       nodes.push(new SyntaxListEntryNode(!nextNextChild, finishTrivia([
-        new PositionalNode(parseTsNode(child)),
+        parseTsNode(child),
         parseTriviaBetween(child, nextChild),
-        new PositionalNode(parseTsNode(nextChild)),
+        parseTsNode(nextChild),
         parseTriviaBetween(nextChild, nextNextChild),
       ])))
       i++
@@ -267,7 +301,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function emptyTrivia(){
-    return new PositionalNode(new WhitespaceNode([]))
+    return new WhitespacePositionalNode(new WhitespaceNode([]))
   }
 
   function finishTrivia(children: Node[]){
@@ -301,7 +335,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       }
       // else children.push(new TextNode(match))
     }
-    return new PositionalNode(new WhitespaceNode(children))
+    return new WhitespacePositionalNode(new WhitespaceNode(children))
   }
 }
 
