@@ -34,6 +34,7 @@ export abstract class Node {
           .map(Class =>
             [Class, Class.prototype.priority, Class.prototype.requireContext] as const,
           )
+          .filter(([Class]) => Class.prototype.influenceParent)
           .sort((a, b) => b[1] - a[1])
           .map(([Class, priority, requireContext]) => ({
             priority,
@@ -55,6 +56,10 @@ export abstract class Node {
       this.toString = () => args
     this._applyChildren()
     type self = this
+  }
+
+  get influenceParent(){
+    return true
   }
 
   private _applyChildren(){

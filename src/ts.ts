@@ -35,11 +35,6 @@ const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof TsNodeNode => {
     const name = syntaxKindName(kind)
     let priority = 1
-    let requireContext = false
-    if(kind === ts.SyntaxKind.SyntaxList) {
-      priority = .4
-      requireContext = true
-    }
     if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
       priority = 2
 
@@ -49,10 +44,6 @@ const nodeClassForSyntaxKind = cacheFn(
         return priority
       }
 
-      override get requireContext(){
-        return requireContext
-      }
-
     }
 
     return { [name]: class extends BaseClass {} }[name]
@@ -60,24 +51,49 @@ const nodeClassForSyntaxKind = cacheFn(
   new Map<ts.SyntaxKind, typeof TsNodeNode>(),
 )
 
-const SyntaxListNode = nodeClassForSyntaxKind(ts.SyntaxKind.SyntaxList)
+class SyntaxListNode extends TsNodeNode {
+
+  constructor(children: readonly Node[]){
+    super(children)
+  }
+
+  isEmptyFilter = this.filterGroup.addFilter({
+    required: "strong",
+    filter(self, nodes){
+      return nodes.filter(x => !!x.children.length === !!self.children.length)
+    },
+  })
+
+  override get priority(){
+    return .4
+  }
+
+}
+
 class SyntaxListEntryNode extends Node {
+
+  override get filterByChildren(){
+    return false
+  }
+
+  override get requireContext(){
+    return true
+  }
+
+}
+
+class SyntaxListSeparatorNode extends Node {
 
   constructor(public final: boolean, children: readonly Node[]){
     super(children)
   }
 
   isFinalFilter = this.filterGroup.addFilter({
-    priority: 10,
     required: "strong",
     filter(self, nodes){
       return nodes.filter(x => x.final === self.final)
     },
   })
-
-  override get requireContext(){
-    return true
-  }
 
 }
 
@@ -227,17 +243,19 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
             new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("{"),
             space(),
             new SyntaxListNode([
-              new SyntaxListEntryNode(true, [
+              new SyntaxListEntryNode([
                 new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnStatement))([
                   new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnKeyword))("return"),
                   space(),
                   resultNode,
                   new IndentNode(0),
                 ]),
-                emptyTrivia(),
-                new EmptyNode(),
-                emptyTrivia(),
-                new IndentNode(0),
+                new SyntaxListSeparatorNode(true, [
+                  emptyTrivia(),
+                  new EmptyNode(),
+                  emptyTrivia(),
+                  new IndentNode(0),
+                ]),
               ]),
             ]),
             space(),
@@ -262,34 +280,40 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(child.kind === separatorKind) {
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode(!nextChild, finishTrivia([
+        nodes.push(new SyntaxListEntryNode([
           new EmptyNode(),
-          emptyTrivia(),
-          parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
-        ])))
+          new SyntaxListSeparatorNode(!nextChild, finishTrivia([
+            emptyTrivia(),
+            parseTsNode(child),
+            parseTriviaBetween(child, nextChild),
+          ])),
+        ]))
         continue
       }
       if(nextChild?.kind !== separatorKind) {
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode(!nextChild, finishTrivia([
+        nodes.push(new SyntaxListEntryNode([
           parseTsNode(child),
-          parseTriviaBetween(child, nextChild),
-          new EmptyNode(),
-          emptyTrivia(),
-        ])))
+          new SyntaxListSeparatorNode(!nextChild, finishTrivia([
+            parseTriviaBetween(child, nextChild),
+            new EmptyNode(),
+            emptyTrivia(),
+          ])),
+        ]))
         continue
       }
       if(nextChild && i === children.length - 2 && !trailing)
         throw new Error(`Encountered trailing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(new SyntaxListEntryNode(!nextNextChild, finishTrivia([
+      nodes.push(new SyntaxListEntryNode([
         parseTsNode(child),
-        parseTriviaBetween(child, nextChild),
-        parseTsNode(nextChild),
-        parseTriviaBetween(nextChild, nextNextChild),
-      ])))
+        new SyntaxListSeparatorNode(!nextNextChild, finishTrivia([
+          parseTriviaBetween(child, nextChild),
+          parseTsNode(nextChild),
+          parseTriviaBetween(nextChild, nextNextChild),
+        ])),
+      ]))
       i++
     }
     return new SyntaxListNode(nodes)
