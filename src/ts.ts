@@ -109,14 +109,6 @@ class WhitespaceNode extends InterchangeableNode {
 
   multiline = this.children.some(x => x instanceof NewlineNode)
 
-  // multilineFilter = this.filterGroup.addFilter({
-  //   priority: 10,
-  //   optional: true,
-  //   filter(self, nodes){
-  //     return nodes.filter(x => x.multiline === self.multiline)
-  //   },
-  // })
-
 }
 
 class WhitespacePositionalNode extends PositionalNode<WhitespaceNode> {
@@ -182,7 +174,7 @@ class StringLiteralNode extends Node {
     const escapedInnerText = this.innerText
       // If the length is even (like `\"`), it's already escaped
       .replace(new RegExp("\\\\*" + newQuote, "g"), x => x.length % 2 ? "\\" + x : x)
-      // Unescape old quotes; we don't need to check for length, because it must be escaped
+      // Unescape old quotes; we don't need to check for length, because they must be escaped
       .replace(new RegExp("\\\\" + this.quote, "g"), this.quote)
     return new StringLiteralNode(newQuote + escapedInnerText + newQuote)
   }
