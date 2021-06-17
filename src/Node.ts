@@ -159,10 +159,6 @@ export abstract class Node {
 
 }
 
-export function nullifyEmptyArray<T>(array: readonly T[]){
-  return array.length ? array : null
-}
-
 const filterInstanceOf = cacheFn(
   (ctor: new (...args: any) => Node) =>
     cacheFn(
