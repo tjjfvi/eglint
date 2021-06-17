@@ -31,8 +31,6 @@ export class FilterGroup<T> implements Filter<T> {
   }
 
   addFilter(filter: Filter<T>){
-    if(filter.required === "strong")
-      filter.priority = Infinity
     let index = 0
     for(const existingFilter of this.filters)
       if((existingFilter.priority ?? Infinity) >= (filter.priority ?? Infinity))

@@ -1,8 +1,6 @@
 let y = {
   a: 1,
-  foo: () => {
-    return "lalala" 
-  },
+  foo: () => "lalala",
   ...{ x: { x: { x: 5 } } },
   b: 'aaa"aaa',
 }
@@ -23,8 +21,8 @@ const b = () => {
   return 123 
 }
 
-const c = () => 123
-
-const d = () => {
+const c = () => {
   return 123 
 }
+
+const d = () => 123

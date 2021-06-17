@@ -10,6 +10,7 @@ import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
 import { ForkNode } from "./ForkNode"
 import { FilterGroup } from "./FilterGroup"
+import { SingletonNode } from "./SingletonNode"
 
 class TsNodeNode extends Node {
 
@@ -74,10 +75,10 @@ class SyntaxListNode extends TsNodeNode {
 
 }
 
-class SyntaxListEntryNode extends Node {
+class SyntaxListEntryNode extends SingletonNode {
 
-  override get filterByChildren(){
-    return false
+  override get priority(){
+    return .9
   }
 
   override get requireContext(){
@@ -98,6 +99,10 @@ class SyntaxListSeparatorNode extends Node {
       return nodes.filter(x => x.final === self.final)
     },
   })
+
+  override get requireContext(){
+    return true
+  }
 
 }
 
@@ -239,19 +244,17 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
             new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("{"),
             space(),
             new SyntaxListNode([
-              new SyntaxListEntryNode([
-                new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnStatement))([
-                  new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnKeyword))("return"),
-                  space(),
-                  resultNode,
-                  new IndentNode(0),
-                ]),
-                new SyntaxListSeparatorNode(true, [
-                  emptyTrivia(),
-                  new EmptyNode(),
-                  emptyTrivia(),
-                  new IndentNode(0),
-                ]),
+              new SyntaxListEntryNode(new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnStatement))([
+                new (nodeClassForSyntaxKind(ts.SyntaxKind.ReturnKeyword))("return"),
+                space(),
+                resultNode,
+                new IndentNode(0),
+              ])),
+              new SyntaxListSeparatorNode(true, [
+                emptyTrivia(),
+                new EmptyNode(),
+                emptyTrivia(),
+                new IndentNode(0),
               ]),
             ]),
             space(),
@@ -276,40 +279,40 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       if(child.kind === separatorKind) {
         if(!sparse)
           throw new Error(`Encountered double separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode([
-          new EmptyNode(),
+        nodes.push(
+          new SyntaxListEntryNode(new EmptyNode()),
           new SyntaxListSeparatorNode(!nextChild, finishTrivia([
             emptyTrivia(),
             parseTsNode(child),
             parseTriviaBetween(child, nextChild),
           ])),
-        ]))
+        )
         continue
       }
       if(nextChild?.kind !== separatorKind) {
         if(nextChild && !optionalSeparator)
           throw new Error(`Encountered missing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(new SyntaxListEntryNode([
-          parseTsNode(child),
+        nodes.push(
+          new SyntaxListEntryNode(parseTsNode(child)),
           new SyntaxListSeparatorNode(!nextChild, finishTrivia([
             parseTriviaBetween(child, nextChild),
             new EmptyNode(),
             emptyTrivia(),
           ])),
-        ]))
+        )
         continue
       }
       if(nextChild && i === children.length - 2 && !trailing)
         throw new Error(`Encountered trailing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
       const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(new SyntaxListEntryNode([
-        parseTsNode(child),
+      nodes.push(
+        new SyntaxListEntryNode(parseTsNode(child)),
         new SyntaxListSeparatorNode(!nextNextChild, finishTrivia([
           parseTriviaBetween(child, nextChild),
           parseTsNode(nextChild),
           parseTriviaBetween(nextChild, nextNextChild),
         ])),
-      ]))
+      )
       i++
     }
     return new SyntaxListNode(nodes)
