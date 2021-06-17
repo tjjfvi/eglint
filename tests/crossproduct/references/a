@@ -1,4 +1,5 @@
-const x = [1, 2, "abc", '"', 5n + 6n, []]
+
+const x = [ 1, 2, "abc", '"', 5n + 6n, [] ]
 
 const abc = [
   1,
@@ -19,3 +20,5 @@ const foo = () => 5
 const baz = () => {
   return 123456789 
 }
+
+foo[bar]

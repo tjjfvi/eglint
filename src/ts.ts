@@ -68,6 +68,10 @@ class SyntaxListNode extends TsNodeNode {
     return .4
   }
 
+  override get requireContext(){
+    return true
+  }
+
 }
 
 class SyntaxListEntryNode extends Node {
