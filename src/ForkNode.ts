@@ -7,7 +7,10 @@ export class ForkNode extends SingletonNode {
 
   constructor(current: Node, public alternatives: readonly Node[]){
     super(current)
-    this.filterGroup.filters = [] // Don't filter by children
+  }
+
+  override get filterByChildren(){
+    return false
   }
 
   private chooseOption(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){

@@ -1,18 +1,28 @@
 
 // Covariant :/
 export interface Filter<T> {
-  priority: number,
-  optional: boolean,
-  filter(value: T, nodes: readonly T[]): readonly T[],
+  /** Defaults to Infinity */
+  priority?: number,
+  /** Defaults to false */
+  required?: "strong" | "weak" | false,
+  filter(value: T, nodes: readonly T[], requireWeak: boolean): readonly T[],
 }
+
+export type FilterGroupArgs<T> = Omit<Filter<T>, "filter"> & { mode: "and" | "or", filters: Filter<T>[] }
 
 export class FilterGroup<T> implements Filter<T> {
 
-  lastMandatoryFilterInd = -1
   filters: Filter<T>[] = []
 
-  constructor(filters: Filter<T>[], public priority = 0, public optional = true){
+  mode: "and" | "or"
+  priority?: number
+  required?: "strong" | "weak" | false
+
+  constructor({ mode, filters, priority, required }: FilterGroupArgs<T>){
     this.addFilters(filters)
+    this.mode = mode
+    this.priority = priority
+    this.required = required
   }
 
   addFilters(filters: Filter<T>[]){
@@ -21,44 +31,41 @@ export class FilterGroup<T> implements Filter<T> {
   }
 
   addFilter(filter: Filter<T>){
+    if(filter.required === "strong")
+      filter.priority = Infinity
     let index = 0
     for(const existingFilter of this.filters)
-      if(existingFilter.priority > filter.priority)
+      if((existingFilter.priority ?? Infinity) >= (filter.priority ?? Infinity))
         index++
       else
         break
     this.filters.splice(index, 0, filter)
-    if(!filter.optional && index > this.lastMandatoryFilterInd)
-      this.lastMandatoryFilterInd = index
-    else if(index <= this.lastMandatoryFilterInd)
-      this.lastMandatoryFilterInd++
     return filter
   }
 
-  updatePriority(filter: Filter<T>, priority: number){
-    const oldIndex = this.filters.indexOf(filter)
-    if(oldIndex !== -1) {
-      this.filters.splice(oldIndex, 1)
-      if(oldIndex <= this.lastMandatoryFilterInd)
-        this.lastMandatoryFilterInd--
-    }
-    filter.priority = priority
-    this.addFilter(filter)
-  }
-
-  filter(value: T, nodes: readonly T[]){
-    for(const [i, filter] of this.filters.entries()) {
-      if(!nodes.length) break
-      if(nodes.length === 1)
-        if(i > this.lastMandatoryFilterInd)
+  filter(value: T, nodes: readonly T[], requireWeak: boolean){
+    const isRequired = (filter: Filter<T>) =>
+      requireWeak ? filter.required : filter.required === "strong"
+    if(this.mode === "and") {
+      for(const filter of this.filters) {
+        if(!nodes.length)
           break
-        else if(filter.optional)
+        if(nodes.length === 1 && !isRequired(filter))
           continue
-      const filteredNodes = filter.filter(value, nodes)
-      if(filteredNodes.length || !filter.optional)
-        nodes = filteredNodes
+        const filteredNodes = filter.filter(value, nodes, requireWeak)
+        if(filteredNodes.length || isRequired(filter))
+          nodes = filteredNodes
+      }
+      return nodes
     }
-    return nodes
+    else {
+      for(const filter of this.filters) {
+        const filteredNodes = filter.filter(value, nodes, requireWeak)
+        if(filteredNodes.length || isRequired(filter))
+          return filteredNodes
+      }
+      return []
+    }
   }
 
 }

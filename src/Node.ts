@@ -6,44 +6,50 @@ import { inspect } from "./utils"
 
 let idN = 0
 
+export type NodeClass<T extends Node> = (new (...args: any) => T) & Omit<typeof Node, never>
+
 export abstract class Node {
 
-  priority = 1
+  get priority(){
+    return 1
+  }
 
   id = idN++
   children: readonly Node[] = []
   parent: Node | null = null
   index = -1
 
-  filterGroup = new FilterGroup<this>([])
+  filterGroup = new FilterGroup<this>({ mode: "and", filters: [] })
+
+  get filterByChildren(){
+    return true
+  }
 
   constructor(args?: readonly Node[] | string){
     if(args instanceof Array) {
       this.children = args
       const childClasses = [...new Set(this.children.map(x => x.compareClass))]
-      this.filterGroup.filters = childClasses
-        .map(x => [x, this.children.find(c => c.compareClass === x)?.priority ?? 0] as const)
-        .sort((a, b) => b[1] - a[1])
-        .map(([compareClass, priority]) => ({
-          priority,
-          optional: false,
-          filter(self, origNodes){
-            let nodes = origNodes
-            let anyMatched = false
-            for(const child of self.children)
-              if(child.compareClass === compareClass) {
-                const children = nodes.flatMap(x => x.children)
-                const filteredChildren = child.select(children, [])
-                nodes = [...new Set(filteredChildren.map(x => x.parent as self))]
-                anyMatched ||= !!nodes.length
-                if(!nodes.length)
-                  break
-              }
-            if(!nodes.length && !anyMatched)
-              return origNodes
-            return nodes
-          },
-        }))
+      if(this.filterByChildren)
+        this.filterGroup.filters = childClasses
+          .map(Class =>
+            [Class, Class.prototype.priority, Class.prototype.requireContext] as const,
+          )
+          .sort((a, b) => b[1] - a[1])
+          .map(([Class, priority, requireContext]) => ({
+            priority,
+            required: requireContext ? "strong" : false,
+            filter(self, nodes){
+              for(const child of self.children)
+                if(child.compareClass === Class) {
+                  const children = nodes.flatMap(x => x.children)
+                  const filteredChildren = child.select(children, [])
+                  nodes = [...new Set(filteredChildren.map(x => x.parent as self))]
+                  if(!nodes.length)
+                    break
+                }
+              return nodes
+            },
+          }))
     }
     else if(typeof args === "string")
       this.toString = () => args
@@ -76,18 +82,21 @@ export abstract class Node {
     return array
   }
 
-  protected compareClass = this.constructor as (new (...args: any) => Node) & Omit<typeof Node, never>
+  protected compareClass = this.constructor as NodeClass<this>
   protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
 
-  filter(nodes: readonly Node[]){
-    return this.filterGroup.filter(this, this.filterCompareClass(nodes))
+  filter(nodes: readonly Node[], requireWeak: boolean){
+    return this.filterGroup.filter(this, this.filterCompareClass(nodes), requireWeak)
   }
 
-  requireContext = false
+  get requireContext(){
+    return false
+  }
+
   select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
-    let filteredNodes = this.filter(selectedReferenceNodes)
+    let filteredNodes = this.filter(selectedReferenceNodes, true)
     if(!filteredNodes.length && !this.requireContext)
-      filteredNodes = this.filter(allReferenceNodes)
+      filteredNodes = this.filter(allReferenceNodes, false)
     return filteredNodes
   }
 

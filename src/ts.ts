@@ -9,6 +9,7 @@ import { SpaceNode } from "./SpaceNode"
 import { IndentNode } from "./IndentNode"
 import { inspect } from "./utils"
 import { ForkNode } from "./ForkNode"
+import { FilterGroup } from "./FilterGroup"
 
 class TsNodeNode extends Node {
 
@@ -23,7 +24,6 @@ class TsNodeNode extends Node {
 
   multilineFilter = this.filterGroup.addFilter({
     priority: .5,
-    optional: true,
     filter(self, nodes){
       return nodes.filter(x => x.isMultiline === self.isMultiline)
     },
@@ -35,18 +35,23 @@ const nodeClassForSyntaxKind = cacheFn(
   (kind: ts.SyntaxKind): typeof TsNodeNode => {
     const name = syntaxKindName(kind)
     let priority = 1
-    if(kind === ts.SyntaxKind.SyntaxList)
+    let requireContext = false
+    if(kind === ts.SyntaxKind.SyntaxList) {
       priority = .4
+      requireContext = true
+    }
     if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
       priority = 2
 
     class BaseClass extends TsNodeNode {
 
-      constructor(...args: ConstructorParameters<typeof Node>){
-        super(...args)
+      override get priority(){
+        return priority
       }
 
-      override priority = priority
+      override get requireContext(){
+        return requireContext
+      }
 
     }
 
@@ -64,11 +69,15 @@ class SyntaxListEntryNode extends Node {
 
   isFinalFilter = this.filterGroup.addFilter({
     priority: 10,
-    optional: false,
+    required: "strong",
     filter(self, nodes){
       return nodes.filter(x => x.final === self.final)
     },
   })
+
+  override get requireContext(){
+    return true
+  }
 
 }
 
@@ -90,7 +99,13 @@ class WhitespaceNode extends InterchangeableNode {
 
 }
 
-class WhitespacePositionalNode extends PositionalNode {}
+class WhitespacePositionalNode extends PositionalNode<WhitespaceNode> {
+
+  get childClass(){
+    return WhitespaceNode
+  }
+
+}
 
 enum StringLiteralEscapes {
   Single = 1 << 0,
@@ -111,36 +126,35 @@ class StringLiteralNode extends Node {
     super(text)
   }
 
-  stringLiteralFilter = this.filterGroup.addFilters([
-    {
-      priority: 10,
-      optional: false,
-      filter(self, nodes){
-        return nodes.filter(x => x.escapes === self.escapes)
+  stringLiteralFilter = this.filterGroup.addFilter(new FilterGroup({
+    mode: "and",
+    priority: 10,
+    required: "strong",
+    filters: [
+      new FilterGroup({
+        mode: "or",
+        required: "weak",
+        filters: [
+          {
+            required: "weak",
+            filter(self, nodes){
+              return nodes.filter(x => x.escapes === self.escapes)
+            },
+          },
+          {
+            filter(self, nodes){
+              return nodes.filter(x => (self.escapes & x.escapes) === self.escapes)
+            },
+          },
+        ],
+      }),
+      {
+        filter(self, nodes){
+          return nodes.filter(x => x.quote === self.quote)
+        },
       },
-    },
-    {
-      priority: 9,
-      optional: true,
-      filter(self, nodes){
-        return nodes.filter(x => x.quote === self.quote)
-      },
-    },
-  ])
-
-  // filter(referenceNodes: readonly this[], allReferenceNodes?: readonly Node[]){
-  //   const allStringReferenceNodes = this.filterCompareClass(allReferenceNodes ?? [])
-  //   referenceNodes = null
-  //     ?? nullifyEmptyArray(this.filterEscapesEqual(referenceNodes))
-  //     ?? nullifyEmptyArray(this.filterEscapesEqual(allStringReferenceNodes))
-  //     ?? nullifyEmptyArray(this.filterEscapesSubset(referenceNodes))
-  //     ?? nullifyEmptyArray(this.filterEscapesSubset(allStringReferenceNodes))
-  //     ?? allStringReferenceNodes
-  //   referenceNodes = null
-  //     ?? nullifyEmptyArray(this.filterEqualQuotes(referenceNodes))
-  //     ?? referenceNodes
-  //   return referenceNodes
-  // }
+    ],
+  }))
 
   override _adaptTo(selectedNode: this | null){
     if(!selectedNode || selectedNode.quote === this.quote) return this
