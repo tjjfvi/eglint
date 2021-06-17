@@ -26,11 +26,11 @@ export default async (update: boolean, filter: string[]) => {
   }, new Map())
 
   const results = await Promise.all(referenceFiles.flatMap(ref => [
-    ...referenceFiles.flatMap(src => inFilter(`${ref}-${src}`) ? [
-      runPairing(`references/${ref}`, `references/${src}`, `outputs/${ref}-${src}`),
+    ...referenceFiles.flatMap(src => inFilter(`${src}-${ref}`) ? [
+      runPairing(`references/${ref}`, `references/${src}`, `outputs/${src}-${ref}`),
     ] : []),
-    ...sourceFiles.flatMap(src => inFilter(`${ref}-${src}`) ? [
-      runPairing(`references/${ref}`, `sources/${src}`, `outputs/${ref}-${src}`),
+    ...sourceFiles.flatMap(src => inFilter(`${src}-${ref}`) ? [
+      runPairing(`references/${ref}`, `sources/${src}`, `outputs/${src}-${ref}`),
     ] : []),
   ]))
 
