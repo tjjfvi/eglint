@@ -13,8 +13,8 @@ const file = (relativePath: string) =>
   fs.readFile(path(relativePath), "utf8")
 
 export default async (update: boolean, filter: string[]) => {
-  const referenceFiles = await fs.readdir(path("references/"))
-  const sourceFiles = await fs.readdir(path("sources/"))
+  const referenceFiles = await fs.readdir(path("ref/"))
+  const subjectFiles = await fs.readdir(path("sub/"))
 
   const inFilter = (x: string) => !filter.length || filter.includes(x)
 
@@ -26,24 +26,24 @@ export default async (update: boolean, filter: string[]) => {
   }, new Map())
 
   const results = await Promise.all(referenceFiles.flatMap(ref => [
-    ...referenceFiles.flatMap(src => inFilter(`${src}-${ref}`) ? [
-      runPairing(`references/${ref}`, `references/${src}`, `outputs/${src}-${ref}`),
+    ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
+      runPairing(`ref/${ref}`, `ref/${subref}`, `out/${subref}-${ref}`),
     ] : []),
-    ...sourceFiles.flatMap(src => inFilter(`${src}-${ref}`) ? [
-      runPairing(`references/${ref}`, `sources/${src}`, `outputs/${src}-${ref}`),
+    ...subjectFiles.flatMap(sub => inFilter(`${sub}-${ref}`) ? [
+      runPairing(`ref/${ref}`, `sub/${sub}`, `out/${sub}-${ref}`),
     ] : []),
   ]))
 
-  async function runPairing(ref: string, src: string, out: string){
+  async function runPairing(ref: string, sub: string, out: string){
     let state = ""
     try {
       state = `parsing ${chalk.bold(ref)}`
       const referenceNode = await parseFile(ref)
 
-      state = `parsing ${chalk.bold(src)}`
-      const sourceNode = await parseFile(src)
+      state = `parsing ${chalk.bold(sub)}`
+      const sourceNode = await parseFile(sub)
 
-      state = `adapting ${chalk.bold(src)} to ${chalk.bold(ref)}`
+      state = `adapting ${chalk.bold(sub)} to ${chalk.bold(ref)}`
       const outputNode = sourceNode.adaptTo([], referenceNode.getAllNodes())
 
       state = `stringifying ${chalk.bold(out)}`
@@ -85,4 +85,3 @@ export default async (update: boolean, filter: string[]) => {
 
   return results
 }
-
