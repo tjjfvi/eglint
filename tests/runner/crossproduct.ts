@@ -16,6 +16,11 @@ export default async (update: boolean, filter: string[]) => {
   const referenceFiles = await fs.readdir(path("ref/"))
   const subjectFiles = await fs.readdir(path("sub/"))
 
+  const duplicateFilenames = referenceFiles.filter(f => subjectFiles.includes(f))
+
+  if(duplicateFilenames.length)
+    throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
+
   const inFilter = (x: string) => !filter.length || filter.includes(x)
 
   const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
