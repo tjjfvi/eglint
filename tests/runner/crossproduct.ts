@@ -6,38 +6,52 @@ import { cacheFn, Node, parseTsSourceFile } from "../../src"
 import chalk from "chalk"
 import { printDiff } from "./diff"
 
-const path = (relativePath: string) =>
+const testPath = (relativePath = "") =>
   joinPath(__dirname, "../crossproduct", relativePath)
 
 const file = (relativePath: string) =>
-  fs.readFile(path(relativePath), "utf8")
+  fs.readFile(testPath(relativePath), "utf8")
 
-export default async (update: boolean, filter: string[]) => {
-  const referenceFiles = await fs.readdir(path("ref/"))
-  const subjectFiles = await fs.readdir(path("sub/"))
+const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
+  const text = await file(path)
+  const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
+  const node = parseTsSourceFile(tsNode)
+  return node
+}, new Map())
 
-  const duplicateFilenames = referenceFiles.filter(f => subjectFiles.includes(f))
+export default async (update: boolean, filterRaw: string[]) => {
+  const filter = filterRaw.map(s => s.replace(/^tests\/crossproduct\//, "").replace("/out/", "/"))
 
-  if(duplicateFilenames.length)
-    throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
+  const testSetDirs = await fs.readdir(testPath())
 
-  const inFilter = (x: string) => !filter.length || filter.includes(x)
+  const results = await Promise.all(testSetDirs.map(async testSet => {
+    const referenceDir = joinPath(testSet, "ref")
+    const subjectDir = joinPath(testSet, "sub")
+    const outputDir = joinPath(testSet, "out")
+    const referenceFiles = await fs.readdir(testPath(referenceDir))
+    const subjectFiles = await fs.readdir(testPath(subjectDir))
+    const referencePath = (f: string) => joinPath(referenceDir, f)
+    const subjectPath = (f: string) => joinPath(subjectDir, f)
+    const outputPath = (f: string) => joinPath(outputDir, f)
 
-  const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
-    const text = await file(path)
-    const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
-    const node = parseTsSourceFile(tsNode)
-    return node
-  }, new Map())
+    const duplicateFilenames = referenceFiles.filter(f => subjectFiles.includes(f))
 
-  const results = await Promise.all(referenceFiles.flatMap(ref => [
-    ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
-      runPairing(`ref/${ref}`, `ref/${subref}`, `out/${subref}-${ref}`),
-    ] : []),
-    ...subjectFiles.flatMap(sub => inFilter(`${sub}-${ref}`) ? [
-      runPairing(`ref/${ref}`, `sub/${sub}`, `out/${sub}-${ref}`),
-    ] : []),
-  ]))
+    if(duplicateFilenames.length)
+      throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
+
+    const inFilter = (x: string) => !filter.length || filter.includes(`${testSet}/${x}`)
+
+    const results = referenceFiles.flatMap(ref => [
+      ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
+        runPairing(referencePath(ref), referencePath(subref), outputPath(`${subref}-${ref}`)),
+      ] : []),
+      ...subjectFiles.flatMap(sub => inFilter(`${sub}-${ref}`) ? [
+        runPairing(referencePath(ref), subjectPath(sub), outputPath(`${sub}-${ref}`)),
+      ] : []),
+    ])
+
+    return await Promise.all(results)
+  }))
 
   async function runPairing(ref: string, sub: string, out: string){
     let state = ""
@@ -62,7 +76,7 @@ export default async (update: boolean, filter: string[]) => {
 
       if(update) {
         state = `Writing ${chalk.bold(out)}`
-        await fs.writeFile(path(out), outputText)
+        await fs.writeFile(testPath(out), outputText)
       }
 
       if(expectedText !== null) {
@@ -88,5 +102,5 @@ export default async (update: boolean, filter: string[]) => {
     }
   }
 
-  return results
+  return results.flat()
 }
