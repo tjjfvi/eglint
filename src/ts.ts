@@ -11,6 +11,7 @@ import { inspect } from "./utils"
 import { ForkNode } from "./ForkNode"
 import { FilterGroup } from "./FilterGroup"
 import { SingletonNode } from "./SingletonNode"
+import { RelativePositionalNode } from "./RelativePositionalNode"
 
 class TsNodeNode extends Node {
 
@@ -87,18 +88,11 @@ class SyntaxListEntryNode extends SingletonNode {
 
 }
 
-class SyntaxListSeparatorNode extends Node {
+class SyntaxListSeparatorNode extends RelativePositionalNode<TsNodeNode> {
 
-  constructor(public final: boolean, children: readonly Node[]){
-    super(children)
+  get childClass(){
+    return TsNodeNode
   }
-
-  isFinalFilter = this.filterGroup.addFilter({
-    required: "strong",
-    filter(self, nodes){
-      return nodes.filter(x => x.final === self.final)
-    },
-  })
 
   override get requireContext(){
     return true
@@ -250,12 +244,12 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
                 resultNode,
                 new IndentNode(0),
               ])),
-              new SyntaxListSeparatorNode(true, [
+              new SyntaxListSeparatorNode(new TsNodeNode([
                 emptyTrivia(),
                 new EmptyNode(),
                 emptyTrivia(),
                 new IndentNode(0),
-              ]),
+              ])),
             ]),
             space(),
             new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("}"),
@@ -281,11 +275,11 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
           throw new Error(`Encountered double separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
         nodes.push(
           new SyntaxListEntryNode(new EmptyNode()),
-          new SyntaxListSeparatorNode(!nextChild, finishTrivia([
+          new SyntaxListSeparatorNode(new TsNodeNode(finishTrivia([
             emptyTrivia(),
             parseTsNode(child),
             parseTriviaBetween(child, nextChild),
-          ])),
+          ]))),
         )
         continue
       }
@@ -294,11 +288,11 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
           throw new Error(`Encountered missing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
         nodes.push(
           new SyntaxListEntryNode(parseTsNode(child)),
-          new SyntaxListSeparatorNode(!nextChild, finishTrivia([
+          new SyntaxListSeparatorNode(new TsNodeNode(finishTrivia([
             parseTriviaBetween(child, nextChild),
             new EmptyNode(),
             emptyTrivia(),
-          ])),
+          ]))),
         )
         continue
       }
@@ -307,11 +301,11 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       const nextNextChild = children[i + 2] as ts.Node | undefined
       nodes.push(
         new SyntaxListEntryNode(parseTsNode(child)),
-        new SyntaxListSeparatorNode(!nextNextChild, finishTrivia([
+        new SyntaxListSeparatorNode(new TsNodeNode(finishTrivia([
           parseTriviaBetween(child, nextChild),
           parseTsNode(nextChild),
           parseTriviaBetween(nextChild, nextNextChild),
-        ])),
+        ]))),
       )
       i++
     }

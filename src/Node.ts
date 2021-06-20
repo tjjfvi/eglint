@@ -87,8 +87,8 @@ export abstract class Node {
     return array
   }
 
-  protected compareClass = this.constructor as NodeClass<this>
-  protected filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
+  compareClass = this.constructor as NodeClass<this>
+  filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
 
   filter(nodes: readonly Node[], requireWeak: boolean){
     return this.filterGroup.filter(this, this.filterCompareClass(nodes), requireWeak)
