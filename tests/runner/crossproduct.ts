@@ -34,6 +34,9 @@ export default async (update: boolean, filterRaw: string[]) => {
     const subjectPath = (f: string) => joinPath(subjectDir, f)
     const outputPath = (f: string) => joinPath(outputDir, f)
 
+    if(update)
+      await fs.mkdir(testPath(outputDir), { recursive: true })
+
     const duplicateFilenames = referenceFiles.filter(f => subjectFiles.includes(f))
 
     if(duplicateFilenames.length)
