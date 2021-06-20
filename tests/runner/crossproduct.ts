@@ -39,7 +39,12 @@ export default async (update: boolean, filterRaw: string[]) => {
     if(duplicateFilenames.length)
       throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
 
-    const inFilter = (x: string) => !filter.length || filter.includes(`${testSet}/${x}`)
+    const inFilter = (x: string) =>
+      false
+        || !filter.length
+        || filter.includes(`${testSet}/${x}`)
+        || filter.includes(`${testSet}/`)
+        || filter.includes(`${testSet}`)
 
     const results = referenceFiles.flatMap(ref => [
       ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
