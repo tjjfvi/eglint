@@ -1,11 +1,11 @@
-const x = [1, 2, "abc", '"', 5n + 6n, []]
-
 const abc = [
   1,
   2,
   3,
   4,
 ]
+
+const x = [1, 2, "abc", '"', 5n + 6n, []]
 
 const y = {
   a: 1,
@@ -14,10 +14,8 @@ const y = {
   ...{ x },
 }
 
-const foo = () => 5
-
 const baz = () => {
-  return 123456789 
+  return () => 5 
 }
 
 foo[bar]
