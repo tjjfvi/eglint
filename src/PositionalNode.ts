@@ -1,13 +1,6 @@
-import { Node, NodeClass } from "./Node"
-import { SingletonNode } from "./SingletonNode"
+import { Node } from "./Node"
 
-export abstract class PositionalNode<T extends Node> extends SingletonNode {
-
-  abstract get childClass(): NodeClass<T>
-
-  constructor(child: T){
-    super(child)
-  }
+export abstract class PositionalNode extends Node {
 
   positionalFilter = this.filterGroup.addFilter({
     required: "strong",
@@ -15,10 +8,6 @@ export abstract class PositionalNode<T extends Node> extends SingletonNode {
       return nodes.filter(x => x.index === self.index)
     },
   })
-
-  override get priority(){
-    return this.childClass.prototype.priority
-  }
 
   override get requireContext(){
     return true

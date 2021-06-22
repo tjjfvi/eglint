@@ -1,18 +1,12 @@
 import { FilterGroup } from "./FilterGroup"
-import { Node, NodeClass } from "./Node"
-import { SingletonNode } from "./SingletonNode"
+import { Node } from "./Node"
 
-export abstract class RelativePositionalNode<T extends Node> extends SingletonNode {
-
-  abstract get childClass(): NodeClass<T>
-
-  constructor(child: T){
-    super(child)
-  }
+export abstract class RelativePositionalNode extends Node {
 
   positionalFilter = this.filterGroup.addFilter(new FilterGroup({
     mode: "and",
     required: "weak",
+    priority: 1,
     filters: [
       { required: "weak", filter: siblingExistenceMatches(-1) },
       { required: "weak", filter: siblingExistenceMatches(+1) },
@@ -20,10 +14,6 @@ export abstract class RelativePositionalNode<T extends Node> extends SingletonNo
       { filter: compareSiblings(+1) },
     ],
   }))
-
-  override get priority(){
-    return this.childClass.prototype.priority
-  }
 
   override get requireContext(){
     return true

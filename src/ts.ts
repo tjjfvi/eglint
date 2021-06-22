@@ -88,19 +88,7 @@ class SyntaxListEntryNode extends SingletonNode {
 
 }
 
-class SyntaxListSeparatorInnerNode extends TsNodeNode {
-
-  override get requireContext(){
-    return true
-  }
-
-}
-
-class SyntaxListSeparatorNode extends RelativePositionalNode<SyntaxListSeparatorInnerNode> {
-
-  get childClass(){
-    return SyntaxListSeparatorInnerNode
-  }
+class SyntaxListSeparatorNode extends RelativePositionalNode {
 
   override get requireContext(){
     return true
@@ -118,10 +106,18 @@ class WhitespaceNode extends InterchangeableNode {
 
 }
 
-class WhitespacePositionalNode extends PositionalNode<WhitespaceNode> {
+class WhitespacePositionalNode extends PositionalNode {
 
-  get childClass(){
-    return WhitespaceNode
+  override get priority(){
+    return -1
+  }
+
+}
+
+class OptionalSemiNode extends ForkNode {
+
+  override get requireContext(){
+    return true
   }
 
 }
@@ -196,6 +192,8 @@ class StringLiteralNode extends Node {
 
 }
 
+const asiHazards = new Set("+-*/([`")
+
 export function parseTsSourceFile(sourceFile: ts.SourceFile){
   const source = sourceFile.getFullText()
   let indentLevel = 0
@@ -232,7 +230,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
         const resultNode = isBlock
           ? bodyNode.children[2].children[0].children[0].children[2]
           : bodyNode
-        const space = () => new WhitespacePositionalNode(new WhitespaceNode([new SpaceNode(1)]))
+        const space = () => new WhitespacePositionalNode([new WhitespaceNode([new SpaceNode(1)])])
         const alternative = isBlock
           ? resultNode
           : new (nodeClassForSyntaxKind(ts.SyntaxKind.Block))([
@@ -245,12 +243,15 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
                 resultNode,
                 new IndentNode(0),
               ])),
-              new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode([
+              new SyntaxListSeparatorNode([
                 emptyTrivia(),
-                new EmptyNode(),
+                new OptionalSemiNode(
+                  new EmptyNode(),
+                  [new (nodeClassForSyntaxKind(ts.SyntaxKind.SemicolonToken))(";")],
+                ),
                 emptyTrivia(),
                 new IndentNode(0),
-              ])),
+              ]),
             ]),
             space(),
             new (nodeClassForSyntaxKind(ts.SyntaxKind.OpenBraceToken))("}"),
@@ -273,72 +274,65 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
         const nodes = []
         for(const [i, child] of children.entries())
           if(child.kind === ts.SyntaxKind.CommaToken)
-            nodes.push(new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode(finishTrivia([
+            nodes.push(new SyntaxListSeparatorNode(finishTrivia([
               parseTriviaBetween(children[i - 1], child),
               i === children.length - 1
                 ? new TrailingCommaNode(parseTsNode(child), [new EmptyNode()])
                 : parseTsNode(child),
               parseTriviaBetween(child, children[i + 1]),
-            ]))))
+            ])))
           else
             nodes.push(new SyntaxListEntryNode(parseTsNode(child)))
         if(children.length && children[children.length - 1].kind !== ts.SyntaxKind.CommaToken)
-          nodes.push(new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode(finishTrivia([
+          nodes.push(new SyntaxListSeparatorNode(finishTrivia([
             emptyTrivia(),
             new TrailingCommaNode(new EmptyNode(), [new (nodeClassForSyntaxKind(ts.SyntaxKind.CommaToken))(",")]),
             emptyTrivia(),
-          ]))))
+          ])))
         return new SyntaxListNode(nodes)
       }
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      case ts.SyntaxKind.Block:
+      case ts.SyntaxKind.SourceFile: {
+        const children = tsNode.getChildren()
+        const nodes = []
+        for(const [i, child] of children.entries()) {
+          const grandchildren = child.getChildren()
+          const hasSemicolon = grandchildren[grandchildren.length - 1]?.kind === ts.SyntaxKind.SemicolonToken
+          const semicolonTsNode = hasSemicolon ? grandchildren[grandchildren.length - 1] : undefined
+          const lastStatementChild = grandchildren[grandchildren.length - (hasSemicolon ? 2 : 1)] as ts.Node | undefined
+          const nextChild = children[i + 1] as ts.Node | undefined
+          const nextChildFirstChar = nextChild && source.slice(nextChild.getStart(sourceFile)).slice(0, 1)
+          const optional = lastStatementChild && (false
+            || !hasSemicolon
+            || !nextChild
+            || true
+              && source.slice(lastStatementChild.end, nextChild.getStart(sourceFile)).includes("\n")
+              && !asiHazards.has(nextChildFirstChar!)
+          )
+          const stmtNode = parseTsNode(child)
+          if(hasSemicolon)
+            (stmtNode.children as Node[]).splice(stmtNode.children.length - 3, 2)
+          nodes.push(new SyntaxListEntryNode(stmtNode))
+          nodes.push(new SyntaxListSeparatorNode(finishTrivia([
+            parseTriviaBetween(lastStatementChild, semicolonTsNode),
+            optional
+              ? hasSemicolon
+                ? new OptionalSemiNode(parseTsNode(semicolonTsNode!), [new EmptyNode()])
+                : new OptionalSemiNode(
+                  new EmptyNode(),
+                  [new (nodeClassForSyntaxKind(ts.SyntaxKind.SemicolonToken))(";")],
+                )
+              : parseTsNode(semicolonTsNode!),
+            parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),
+          ])))
+        }
+        return new SyntaxListNode(nodes)
+      }
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
       default:
-        // throw new Error("Unhandled SyntaxList parent " + syntaxKindName(tsNode.parent.kind))
+        throw new Error("Unhandled SyntaxList Parent " + syntaxKindName(tsNode.parent.kind))
     }
-    const [sparse, trailing, optionalSeparator, separatorKind] = [0, 1, 1, ts.SyntaxKind.SemicolonToken]
-    const children = tsNode.getChildren()
-    let nodes = []
-    for(let i = 0; i < children.length; i++) {
-      const child = children[i]
-      const nextChild = children[i + 1] as ts.Node | undefined
-      if(child.kind === separatorKind) {
-        if(!sparse)
-          throw new Error(`Encountered double separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(
-          new SyntaxListEntryNode(new EmptyNode()),
-          new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode(finishTrivia([
-            emptyTrivia(),
-            parseTsNode(child),
-            parseTriviaBetween(child, nextChild),
-          ]))),
-        )
-        continue
-      }
-      if(nextChild?.kind !== separatorKind) {
-        if(nextChild && !optionalSeparator)
-          throw new Error(`Encountered missing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-        nodes.push(
-          new SyntaxListEntryNode(parseTsNode(child)),
-          new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode(finishTrivia([
-            parseTriviaBetween(child, nextChild),
-            new EmptyNode(),
-            emptyTrivia(),
-          ]))),
-        )
-        continue
-      }
-      if(nextChild && i === children.length - 2 && !trailing)
-        throw new Error(`Encountered trailing separator in ${syntaxKindName(tsNode.parent.kind)} SyntaxList`)
-      const nextNextChild = children[i + 2] as ts.Node | undefined
-      nodes.push(
-        new SyntaxListEntryNode(parseTsNode(child)),
-        new SyntaxListSeparatorNode(new SyntaxListSeparatorInnerNode(finishTrivia([
-          parseTriviaBetween(child, nextChild),
-          parseTsNode(nextChild),
-          parseTriviaBetween(nextChild, nextNextChild),
-        ]))),
-      )
-      i++
-    }
-    return new SyntaxListNode(nodes)
   }
 
   function getTsChildren(node: ts.Node){
@@ -351,7 +345,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
   }
 
   function emptyTrivia(){
-    return new WhitespacePositionalNode(new WhitespaceNode([]))
+    return new WhitespacePositionalNode([new WhitespaceNode([])])
   }
 
   function finishTrivia(children: Node[]){
@@ -385,7 +379,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
       }
       // else children.push(new TextNode(match))
     }
-    return new WhitespacePositionalNode(new WhitespaceNode(children))
+    return new WhitespacePositionalNode([new WhitespaceNode(children)])
   }
 }
 

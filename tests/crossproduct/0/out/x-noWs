@@ -6,4 +6,4 @@ foo(
 const a=()=>123
 const b=()=>{return 123}
 const c=()=>{return 123}
-const d=()=>123
+const d=()=>123;[[],[]]

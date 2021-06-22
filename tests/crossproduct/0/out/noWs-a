@@ -9,3 +9,5 @@ const foo = () => 5
 const baz = () => {
   return 123456789 
 }
+
+;(1 + 2) * 3
