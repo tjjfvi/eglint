@@ -51,7 +51,9 @@ export default async (update: boolean, filterRaw: string[]) => {
 
     const results = referenceFiles.flatMap(ref => [
       ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
-        runPairing(referencePath(ref), referencePath(subref), outputPath(`${subref}-${ref}`)),
+        (subref === ref)
+          ? runPairing(referencePath(ref), referencePath(ref), referencePath(ref))
+          : runPairing(referencePath(ref), referencePath(subref), outputPath(`${subref}-${ref}`)),
       ] : []),
       ...subjectFiles.flatMap(sub => inFilter(`${sub}-${ref}`) ? [
         runPairing(referencePath(ref), subjectPath(sub), outputPath(`${sub}-${ref}`)),
@@ -82,24 +84,27 @@ export default async (update: boolean, filterRaw: string[]) => {
       if(outputText === expectedText)
         return true
 
-      if(update) {
+      const overrideUpdate = out === ref
+      const updateOutput = update && !overrideUpdate
+
+      if(updateOutput) {
         state = `Writing ${chalk.bold(out)}`
         await fs.writeFile(testPath(out), outputText)
       }
 
       if(expectedText !== null) {
-        console.log((update ? chalk : chalk.redBright)(`Output changed in ${chalk.bold(out)}:`))
+        console.log((updateOutput ? chalk : chalk.redBright)(`Output changed in ${chalk.bold(out)}:`))
         state = `diffing ${chalk.bold(out)}`
         printDiff(expectedText, outputText)
         console.log()
       }
 
       if(expectedText === null)
-        console.log((update ? chalk : chalk.redBright)(
-          `${update ? "Created" : "Missing"} output file ${chalk.bold(out)}\n`,
+        console.log((updateOutput ? chalk : chalk.redBright)(
+          `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(out)}\n`,
         ))
 
-      return update
+      return updateOutput
     }
     catch (e) {
       console.log(chalk.redBright(`Error when ${state}:`))
