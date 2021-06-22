@@ -12,17 +12,17 @@ const testPath = (relativePath = "") =>
 const file = (relativePath: string) =>
   fs.readFile(testPath(relativePath), "utf8")
 
-const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
-  const text = await file(path)
-  const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
-  const node = parseTsSourceFile(tsNode)
-  return node
-}, new Map())
-
 export default async (update: boolean, filterRaw: string[]) => {
   const filter = filterRaw.map(s => s.replace(/^tests\/crossproduct\//, "").replace("/out/", "/"))
 
   const testSetDirs = await fs.readdir(testPath())
+
+  const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
+    const text = await file(path)
+    const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
+    const node = parseTsSourceFile(tsNode)
+    return node
+  }, new Map())
 
   const results = await Promise.all(testSetDirs.map(async testSet => {
     const referenceDir = joinPath(testSet, "ref")
