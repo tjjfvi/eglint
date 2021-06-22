@@ -1,6 +1,6 @@
 
 import chalk from "chalk"
-import runCrossproductTests from "./crossproduct"
+import runCrossproductTests, { TestStatus } from "./crossproduct"
 import yargs from "yargs"
 import watchDir from "node-watch"
 import path from "path"
@@ -17,22 +17,34 @@ const { join, relative } = path.posix
     .alias("h", "help")
     .argv
 
-  if(options.watch)
-    watch()
-  else
-    process.exit(await run())
+  if(options.watch) watch()
+  else run()
 
   async function run(){
     const results = await runCrossproductTests(options.update, options._.map(x => x.toString()))
 
-    if(results.every(x => x)) {
-      console.log(chalk.green(`${chalk.bold(results.length)} tests passed`))
-      return 0
+    const colors: Record<TestStatus, chalk.ChalkFunction> = {
+      passed: chalk.green,
+      updated: chalk.blueBright,
+      failed: chalk.redBright,
+      missing: chalk.yellow,
+      skipped: chalk.dim,
+      errored: chalk.redBright,
     }
-    else {
-      console.log(chalk.redBright(`${chalk.bold(results.filter(x => !x).length)} tests failed`))
-      return 1
+
+    const counts = Object.keys(colors).map(s => results.filter(x => x.status === s).length)
+    const padLength = Math.max(...counts).toString().length
+
+    for(const [i, [status, color]] of Object.entries(colors).entries()) {
+      const count = counts[i]
+      if(count)
+        console.log(color(`${chalk.bold(count.toString().padStart(padLength))} tests ${status}`))
     }
+
+    if(!options.watch)
+      process.exit(results.every(x => x.status === "passed") ? 0 : 1)
+
+    return results
   }
 
   function watch(){

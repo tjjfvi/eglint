@@ -1,10 +1,10 @@
 
-import * as diff from "diff"
+import { diffWords } from "diff"
 import chalk from "chalk"
 
 const lineStart = /^(?=[^])/gm
 
-export function printDiff(expected: string, actual: string){
+export function createRichDiff(expected: string, actual: string){
   if(!expected.endsWith("\n"))
     expected += "\n"
   if(!actual.endsWith("\n"))
@@ -19,7 +19,7 @@ export function printDiff(expected: string, actual: string){
 
   let output = ""
 
-  for(const diffPart of diff.diffWords(expected, actual, { ignoreWhitespace: false }))
+  for(const diffPart of diffWords(expected, actual, { ignoreWhitespace: false }))
     for(const content of diffPart.value.split(/(\n)/)) { // "abc\ndef".split(/(\n)/) = ["abc", "\n", "def"]
       if(!content) continue
 
@@ -68,5 +68,5 @@ export function printDiff(expected: string, actual: string){
   output += delAcc
   output += addAcc
 
-  process.stdout.write(output)
+  return output
 }

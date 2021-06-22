@@ -4,7 +4,7 @@ import { join as joinPath } from "path"
 import ts from "typescript"
 import { cacheFn, Node, parseTsSourceFile } from "../../src"
 import chalk from "chalk"
-import { printDiff } from "./diff"
+import { createRichDiff } from "./diff"
 
 const testPath = (relativePath = "") =>
   joinPath(__dirname, "../crossproduct", relativePath)
@@ -12,108 +12,125 @@ const testPath = (relativePath = "") =>
 const file = (relativePath: string) =>
   fs.readFile(testPath(relativePath), "utf8")
 
+export type TestStatus = TestResult["status"]
+export type TestResult =
+  & { id: string }
+  & (
+    | { status: "passed" | "updated" | "skipped" | "errored" }
+    | { status: "failed" | "missing", diff: string }
+  )
+
 export default async (update: boolean, filterRaw: string[]) => {
   const filter = filterRaw.map(s => s.replace(/^tests\/crossproduct\//, "").replace("/out/", "/"))
 
-  const testSetDirs = await fs.readdir(testPath())
+  const testSets = await fs.readdir(testPath())
 
   const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
     const text = await file(path)
-    const tsNode = ts.createSourceFile("reference", text, ts.ScriptTarget.ES2020, true)
+    const tsNode = ts.createSourceFile("ref", text, ts.ScriptTarget.ES2020, true)
     const node = parseTsSourceFile(tsNode)
     return node
   }, new Map())
 
-  const results = await Promise.all(testSetDirs.map(async testSet => {
-    const referenceDir = joinPath(testSet, "ref")
-    const subjectDir = joinPath(testSet, "sub")
-    const outputDir = joinPath(testSet, "out")
-    const referenceFiles = await fs.readdir(testPath(referenceDir))
-    const subjectFiles = await fs.readdir(testPath(subjectDir))
-    const referencePath = (f: string) => joinPath(referenceDir, f)
-    const subjectPath = (f: string) => joinPath(subjectDir, f)
-    const outputPath = (f: string) => joinPath(outputDir, f)
+  const results: Promise<TestResult[]>[] = []
+
+  for(const testSet of testSets)
+    results.push(runTestSet(testSet))
+
+  return (await Promise.all(results)).flat()
+
+  async function runTestSet(testSet: string){
+    const results = []
+
+    const refDir = joinPath(testSet, "ref")
+    const subDir = joinPath(testSet, "sub")
+    const outDir = joinPath(testSet, "out")
+
+    const refNames = await fs.readdir(testPath(refDir))
+    const subNames = await fs.readdir(testPath(subDir))
+
+    const getRefPath = (f: string) => joinPath(refDir, f)
+    const getSubPath = (f: string) => joinPath(subDir, f)
+    const getOutPath = (f: string) => joinPath(outDir, f)
 
     if(update)
-      await fs.mkdir(testPath(outputDir), { recursive: true })
+      await fs.mkdir(testPath(outDir), { recursive: true })
 
-    const duplicateFilenames = referenceFiles.filter(f => subjectFiles.includes(f))
+    const duplicateFilenames = refNames.filter(f => subNames.includes(f))
 
     if(duplicateFilenames.length)
       throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
 
-    const inFilter = (x: string) =>
-      false
-        || !filter.length
-        || filter.includes(`${testSet}/${x}`)
-        || filter.includes(`${testSet}/`)
-        || filter.includes(`${testSet}`)
-
-    const results = referenceFiles.flatMap(ref => [
-      ...referenceFiles.flatMap(subref => inFilter(`${subref}-${ref}`) ? [
-        (subref === ref)
-          ? runPairing(referencePath(ref), referencePath(ref), referencePath(ref))
-          : runPairing(referencePath(ref), referencePath(subref), outputPath(`${subref}-${ref}`)),
-      ] : []),
-      ...subjectFiles.flatMap(sub => inFilter(`${sub}-${ref}`) ? [
-        runPairing(referencePath(ref), subjectPath(sub), outputPath(`${sub}-${ref}`)),
-      ] : []),
-    ])
-
-    return await Promise.all(results)
-  }))
-
-  async function runPairing(ref: string, sub: string, out: string){
-    let state = ""
-    try {
-      state = `parsing ${chalk.bold(ref)}`
-      const referenceNode = await parseFile(ref)
-
-      state = `parsing ${chalk.bold(sub)}`
-      const sourceNode = await parseFile(sub)
-
-      state = `adapting ${chalk.bold(sub)} to ${chalk.bold(ref)}`
-      const outputNode = sourceNode.adaptTo([], referenceNode.getAllNodes())
-
-      state = `stringifying ${chalk.bold(out)}`
-      const outputText = outputNode.toString()
-
-      state = `reading ${chalk.bold(out)}`
-      const expectedText = await file(out).catch(() => null)
-
-      if(outputText === expectedText)
-        return true
-
-      const overrideUpdate = out === ref
-      const updateOutput = update && !overrideUpdate
-
-      if(updateOutput) {
-        state = `Writing ${chalk.bold(out)}`
-        await fs.writeFile(testPath(out), outputText)
-      }
-
-      if(expectedText !== null) {
-        console.log((updateOutput ? chalk : chalk.redBright)(`Output changed in ${chalk.bold(out)}:`))
-        state = `diffing ${chalk.bold(out)}`
-        printDiff(expectedText, outputText)
-        console.log()
-      }
-
-      if(expectedText === null)
-        console.log((updateOutput ? chalk : chalk.redBright)(
-          `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(out)}\n`,
-        ))
-
-      return updateOutput
+    for(const refName of refNames) {
+      for(const subName of subNames)
+        results.push(runTest(refName, subName))
+      for(const subRefName of refNames)
+        results.push(runTest(refName, subRefName))
     }
-    catch (e) {
-      console.log(chalk.redBright(`Error when ${state}:`))
-      console.log(e)
-      console.log()
 
-      return false
+    return (await Promise.all(results)).flat()
+
+    async function runTest(refName: string, subName: string): Promise<TestResult>{
+      const refPath = getRefPath(refName)
+      const subPath = (refNames.includes(subName) ? getRefPath : getSubPath)(subName)
+      const outPath = refName === subName ? refPath : getOutPath(`${subName}-${refName}`)
+      const id = `${testSet}/${subName}-${refName}`
+
+      if(filter.length && !(filter.includes(id) || filter.includes(testSet)))
+        return { id, status: "skipped" }
+
+      let state = ""
+      try {
+        state = `parsing ${chalk.bold(refPath)}`
+        const refNode = await parseFile(refPath)
+
+        state = `parsing ${chalk.bold(subPath)}`
+        const subNode = await parseFile(subPath)
+
+        state = `adapting ${chalk.bold(subPath)} to ${chalk.bold(refPath)}`
+        const outNode = subNode.adaptTo([], refNode.getAllNodes())
+
+        state = `stringifying ${chalk.bold(outPath)}`
+        const outText = outNode.toString()
+
+        state = `reading ${chalk.bold(outPath)}`
+        const expectedText = await file(outPath).catch(() => null)
+
+        if(outText === expectedText)
+          return { id, status: "passed" }
+
+        const overrideUpdate = outPath === refPath
+        const updateOutput = update && !overrideUpdate
+
+        if(expectedText !== null) {
+          console.log((updateOutput ? chalk : chalk.redBright)(`Output changed in ${chalk.bold(outPath)}:`))
+          state = `diffing ${chalk.bold(outPath)}`
+          const diff = createRichDiff(expectedText, outText)
+          console.log(diff)
+          if(!updateOutput)
+            return { id, status: "failed", diff }
+        }
+        else {
+          console.log((updateOutput ? chalk : chalk.redBright)(
+            `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(outPath)}\n`,
+          ))
+          const diff = createRichDiff("", outText)
+          console.log(diff)
+          if(!updateOutput)
+            return { id, status: "missing", diff }
+        }
+
+        state = `Writing ${chalk.bold(outPath)}`
+        await fs.writeFile(testPath(outPath), outText)
+        return { id, status: "updated" }
+      }
+      catch (e) {
+        console.log(chalk.redBright(`Error when ${state}:`))
+        console.log(e)
+        console.log()
+
+        return { id, status: "errored" }
+      }
     }
   }
-
-  return results.flat()
 }
