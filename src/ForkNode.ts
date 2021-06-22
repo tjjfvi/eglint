@@ -1,7 +1,7 @@
 import { Node } from "./Node"
 import { SingletonNode } from "./SingletonNode"
 
-export class ForkNode extends SingletonNode {
+export abstract class ForkNode extends SingletonNode {
 
   allOptions: readonly Node[] = [this.children[0], ...this.alternatives]
 
@@ -41,7 +41,10 @@ export class ForkNode extends SingletonNode {
 
   override adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
     const { option, selectedChildren } = this.chooseOption(selectedReferenceNodes, allReferenceNodes)
-    return new ForkNode(option.adaptTo(selectedChildren, allReferenceNodes), this.allOptions.filter(x => x !== option))
+    const clone = this.clone()
+    clone.children = [option.adaptTo(selectedChildren, allReferenceNodes)]
+    clone.alternatives = this.allOptions.filter(x => x !== option)
+    return clone
   }
 
 }

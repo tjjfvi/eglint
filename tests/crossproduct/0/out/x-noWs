@@ -1,4 +1,4 @@
-let y={a:1,foo:()=>"lalala",...{x:{x:{x:5}}},b:'aaa"aaa',}
+let y={a:1,foo:()=>"lalala",...{x:{x:{x:5}}},b:'aaa"aaa'}
 const blah=["abc",1+2,[[[[]]]]][4]
 foo(
   1+2+3

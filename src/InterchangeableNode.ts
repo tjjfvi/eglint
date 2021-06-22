@@ -1,7 +1,7 @@
 
 import { Node } from "./Node"
 
-export class InterchangeableNode extends Node {
+export abstract class InterchangeableNode extends Node {
 
   override get priority(){
     return -1
