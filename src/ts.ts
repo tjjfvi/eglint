@@ -213,7 +213,7 @@ export function parseTsSourceFile(sourceFile: ts.SourceFile){
     let children = []
     let lastPos = tsNodeStart
     for(const child of tsChildren) {
-      if(children.length)
+      if(children.length || tsNode === sourceFile)
         children.push(parseTrivia(lastPos, child.getStart(sourceFile)))
       lastPos = child.end
       children.push(parseTsNode(child))

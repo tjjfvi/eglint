@@ -1,3 +1,4 @@
+
 let y = {
   a: 1,
   foo: ()=> "lalala",
