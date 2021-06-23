@@ -2,7 +2,7 @@
 import fs from "fs/promises"
 import { join as joinPath } from "path"
 import ts from "typescript"
-import { cacheFn, Node, parseTsSourceFile } from "../../src"
+import { cacheFn, Node, SourceFileNode } from "../../src"
 import chalk from "chalk"
 import { createRichDiff } from "./diff"
 
@@ -27,8 +27,8 @@ export default async (update: boolean, filterRaw: string[]) => {
 
   const parseFile = cacheFn<string, Promise<Node>>(async (path: string) => {
     const text = await file(path)
-    const tsNode = ts.createSourceFile("ref", text, ts.ScriptTarget.ES2020, true)
-    const node = parseTsSourceFile(tsNode)
+    const sourceFile = ts.createSourceFile("ref", text, ts.ScriptTarget.ES2020, true)
+    const node = new SourceFileNode(sourceFile)
     return node
   }, new Map())
 

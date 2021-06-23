@@ -20,6 +20,6 @@
     "transpileOnly": true,
   },
   "include": [
-    "src/*"
+    "src/**/*"
   ],
 }
