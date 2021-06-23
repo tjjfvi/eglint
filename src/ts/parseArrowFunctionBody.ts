@@ -1,16 +1,17 @@
 import ts from "typescript"
-import { IndentNode } from ".."
+import { IndentNode } from "../IndentNode"
 import { ForkNode } from "../ForkNode"
 import { OptionalSemiNode } from "./parseSemiSyntaxList"
 import { SyntaxListNode, SyntaxListEntryNode, SyntaxListSeparatorNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { EmptyNode, TsNodeNode } from "./TsNodeNode"
+import { SingletonNode } from "../SingletonNode"
 
 export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node){
   const bodyNode = this.parseTsNode(bodyTsNode)
   const isBlock = bodyNode instanceof TsNodeNode.for(ts.SyntaxKind.Block)
   const swappable = !isBlock || (
-    bodyNode.children[2].children.length === 1
+    bodyNode.children[2].children.length === 2
     && bodyNode.children[2].children[0].children[0] instanceof TsNodeNode.for(ts.SyntaxKind.ReturnStatement)
   )
   if(!swappable)
@@ -19,7 +20,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
     ? bodyNode.children[2].children[0].children[0].children[2]
     : bodyNode
   const alternative = isBlock
-    ? resultNode
+    ? new ArrowFunctionExpressionBody(resultNode)
     : new (TsNodeNode.for(ts.SyntaxKind.Block))([
       new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("{"),
       this.spaceTrivia(),
@@ -44,7 +45,12 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
       new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("}"),
       new IndentNode(0),
     ])
-  return new SwappableArrowFunctionBody(bodyNode, [alternative])
+  if(isBlock)
+    return new SwappableArrowFunctionBody(bodyNode, [alternative])
+  else
+    return new SwappableArrowFunctionBody(new ArrowFunctionExpressionBody(bodyNode), [alternative])
 }
 
 export class SwappableArrowFunctionBody extends ForkNode {}
+
+export class ArrowFunctionExpressionBody extends SingletonNode {}

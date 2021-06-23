@@ -22,10 +22,10 @@ const b = () => {
   return 123 
 }
 
-const c = () => {
+const c = () => 123
+
+const d = () => {
   return 123 
 }
-
-const d = () => 123
 
 ;[[], []]
