@@ -21,7 +21,7 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
   if(children.length && children[children.length - 1].kind !== ts.SyntaxKind.CommaToken)
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       this.emptyTrivia(),
-      new TrailingCommaNode(new EmptyNode(), [new (TsNodeNode.for(ts.SyntaxKind.CommaToken))(",")]),
+      new TrailingCommaNode(new EmptyNode(), [new TsNodeNode.for.CommaToken(",")]),
       this.emptyTrivia(),
     ])))
   return new SyntaxListNode(nodes)

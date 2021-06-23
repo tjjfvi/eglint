@@ -40,12 +40,11 @@ export class SourceFileNode extends Node {
       return this.parseArrowFunction(tsNode)
 
     const tsChildren = tsNode.getChildren(this.sourceFile)
-    const NodeClass = TsNodeNode.for(tsNode.kind)
 
     if(tsChildren.length)
-      return new NodeClass(this.parseTsChildren(tsNode.getChildren(this.sourceFile)))
+      return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsNode.getChildren(this.sourceFile)))
     else
-      return new NodeClass(this.getText(tsNode))
+      return new TsNodeNode.for[tsNode.kind](this.getText(tsNode))
   }
 
   parseTsChildren(tsChildren: ts.Node[]){

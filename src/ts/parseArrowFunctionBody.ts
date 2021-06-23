@@ -9,10 +9,10 @@ import { SingletonNode } from "../SingletonNode"
 
 export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node){
   const bodyNode = this.parseTsNode(bodyTsNode)
-  const isBlock = bodyNode instanceof TsNodeNode.for(ts.SyntaxKind.Block)
+  const isBlock = bodyNode instanceof TsNodeNode.for.Block
   const swappable = !isBlock || (
     bodyNode.children[2].children.length === 2
-    && bodyNode.children[2].children[0].children[0] instanceof TsNodeNode.for(ts.SyntaxKind.ReturnStatement)
+    && bodyNode.children[2].children[0].children[0] instanceof TsNodeNode.for.ReturnStatement
   )
   if(!swappable)
     return bodyNode
@@ -21,12 +21,12 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
     : bodyNode
   const alternative = isBlock
     ? new ArrowFunctionExpressionBody(resultNode)
-    : new (TsNodeNode.for(ts.SyntaxKind.Block))([
-      new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("{"),
+    : new TsNodeNode.for.Block([
+      new TsNodeNode.for.OpenBraceToken("{"),
       this.spaceTrivia(),
       new SyntaxListNode([
-        new SyntaxListEntryNode(new (TsNodeNode.for(ts.SyntaxKind.ReturnStatement))([
-          new (TsNodeNode.for(ts.SyntaxKind.ReturnKeyword))("return"),
+        new SyntaxListEntryNode(new TsNodeNode.for.ReturnStatement([
+          new TsNodeNode.for.ReturnKeyword("return"),
           this.spaceTrivia(),
           resultNode,
           new IndentNode(0),
@@ -35,14 +35,14 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
           this.emptyTrivia(),
           new OptionalSemiNode(
             new EmptyNode(),
-            [new (TsNodeNode.for(ts.SyntaxKind.SemicolonToken))(";")],
+            [new TsNodeNode.for.SemicolonToken(";")],
           ),
           this.emptyTrivia(),
           new IndentNode(0),
         ]),
       ]),
       this.spaceTrivia(),
-      new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("}"),
+      new TsNodeNode.for.OpenBraceToken("}"),
       new IndentNode(0),
     ])
   if(isBlock)

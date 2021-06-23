@@ -5,7 +5,6 @@ import { InterchangeableNode } from "../InterchangeableNode"
 import { NewlineNode } from "../NewlineNode"
 import { PositionalNode } from "../PositionalNode"
 import { syntaxKindName } from "./tsUtils"
-import { cacheFn } from "../cacheFn"
 
 export class TsNodeNode extends Node {
 
@@ -25,25 +24,28 @@ export class TsNodeNode extends Node {
     },
   })
 
-  static for = cacheFn(
-    (kind: ts.SyntaxKind): typeof TsNodeNode => {
-      const name = syntaxKindName(kind)
-      let priority = 1
-      if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
-        priority = 2
+  static for: Record<ts.SyntaxKind | keyof typeof ts.SyntaxKind, typeof TsNodeNode> = Object.fromEntries(
+    [...new Set(Object.values(ts.SyntaxKind))]
+      .filter((x): x is ts.SyntaxKind => typeof x === "number")
+      .flatMap((kind): [ts.SyntaxKind | keyof typeof ts.SyntaxKind, typeof TsNodeNode][] => {
+        const name = syntaxKindName(kind)
+        let priority = 1
+        if(kind >= ts.SyntaxKind.FirstPunctuation && kind <= ts.SyntaxKind.LastPunctuation)
+          priority = 2
 
-      class BaseClass extends TsNodeNode {
+        class BaseClass extends TsNodeNode {
 
-        override get priority(){
-          return priority
+          override get priority(){
+            return priority
+          }
+
         }
 
-      }
+        const NamedClass = { [name]: class extends BaseClass {} }[name]
 
-      return { [name]: class extends BaseClass {} }[name]
-    },
-    new Map<ts.SyntaxKind, typeof TsNodeNode>(),
-  )
+        return [[kind, NamedClass], [name as keyof typeof ts.SyntaxKind, NamedClass]]
+      }),
+  ) as never
 
 }
 

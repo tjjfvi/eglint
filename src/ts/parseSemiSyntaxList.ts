@@ -35,7 +35,7 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
           ? new OptionalSemiNode(this.parseTsNode(semicolonTsNode!), [new EmptyNode()])
           : new OptionalSemiNode(
             new EmptyNode(),
-            [new (TsNodeNode.for(ts.SyntaxKind.SemicolonToken))(";")],
+            [new TsNodeNode.for.SemicolonToken(";")],
           )
         : this.parseTsNode(semicolonTsNode!),
       this.parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),

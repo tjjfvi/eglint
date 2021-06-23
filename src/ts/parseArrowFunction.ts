@@ -8,7 +8,7 @@ export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
   // - ArrowFunction [ SyntaxList [ Parameter [ Identifier ] ], EqualsGreaterThanToken, <Body> ]
   const tsChildren = tsNode.getChildren(this.sourceFile)
   if(tsChildren.length === 5)
-    return new (TsNodeNode.for(ts.SyntaxKind.ArrowFunction))([
+    return new TsNodeNode.for.ArrowFunction([
       this.parseArrowFunctionParams(tsChildren.slice(0, 3)),
       this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
       this.parseTsNode(tsChildren[3]),
@@ -16,7 +16,7 @@ export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
       this.parseArrowFunctionBody(tsChildren[4]),
     ])
   else if(tsChildren.length === 3)
-    return new (TsNodeNode.for(ts.SyntaxKind.ArrowFunction))([
+    return new TsNodeNode.for.ArrowFunction([
       this.parseArrowFunctionParams(tsChildren.slice(0, 1)),
       this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
       this.parseTsNode(tsChildren[1]),
