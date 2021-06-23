@@ -1,52 +1,28 @@
 import ts from "typescript"
-import { ForkNode } from "../ForkNode"
-import { IndentNode } from "../IndentNode"
-import { OptionalSemiNode } from "./parseSemiSyntaxList"
-import { SyntaxListNode, SyntaxListEntryNode, SyntaxListSeparatorNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
-import { EmptyNode, TsNodeNode } from "./TsNodeNode"
+import { TsNodeNode } from "./TsNodeNode"
 
 export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
-  const children = this.parseTsChildren(tsNode.getChildren(this.sourceFile))
-  const bodyNode = children[8]
-  const isBlock = bodyNode instanceof TsNodeNode.for(ts.SyntaxKind.Block)
-  const swappable = !isBlock || (
-    bodyNode.children[2].children.length === 1
-    && bodyNode.children[2].children[0].children[0] instanceof TsNodeNode.for(ts.SyntaxKind.ReturnStatement)
-  )
-  if(swappable) {
-    const resultNode = isBlock
-      ? bodyNode.children[2].children[0].children[0].children[2]
-      : bodyNode
-    const alternative = isBlock
-      ? resultNode
-      : new (TsNodeNode.for(ts.SyntaxKind.Block))([
-        new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("{"),
-        this.spaceTrivia(),
-        new SyntaxListNode([
-          new SyntaxListEntryNode(new (TsNodeNode.for(ts.SyntaxKind.ReturnStatement))([
-            new (TsNodeNode.for(ts.SyntaxKind.ReturnKeyword))("return"),
-            this.spaceTrivia(),
-            resultNode,
-            new IndentNode(0),
-          ])),
-          new SyntaxListSeparatorNode([
-            this.emptyTrivia(),
-            new OptionalSemiNode(
-              new EmptyNode(),
-              [new (TsNodeNode.for(ts.SyntaxKind.SemicolonToken))(";")],
-            ),
-            this.emptyTrivia(),
-            new IndentNode(0),
-          ]),
-        ]),
-        this.spaceTrivia(),
-        new (TsNodeNode.for(ts.SyntaxKind.OpenBraceToken))("}"),
-        new IndentNode(0),
-      ])
-    children[8] = new SwappableArrowFunctionBody(bodyNode, [alternative])
-  }
-  return new (TsNodeNode.for(ts.SyntaxKind.ArrowFunction))(children)
+  // An ArrowFunction node can either be:
+  // - ArrowFunction [ OpenParenToken, SyntaxList[ ... ], CloseParenToken, EqualsGreaterThanToken, <Body> ]
+  // - ArrowFunction [ SyntaxList [ Parameter [ Identifier ] ], EqualsGreaterThanToken, <Body> ]
+  const tsChildren = tsNode.getChildren(this.sourceFile)
+  if(tsChildren.length === 5)
+    return new (TsNodeNode.for(ts.SyntaxKind.ArrowFunction))([
+      this.parseArrowFunctionParams(tsChildren.slice(0, 3)),
+      this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
+      this.parseTsNode(tsChildren[3]),
+      this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
+      this.parseArrowFunctionBody(tsChildren[4]),
+    ])
+  else if(tsChildren.length === 3)
+    return new (TsNodeNode.for(ts.SyntaxKind.ArrowFunction))([
+      this.parseArrowFunctionParams(tsChildren.slice(0, 1)),
+      this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+      this.parseTsNode(tsChildren[1]),
+      this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
+      this.parseArrowFunctionBody(tsChildren[2]),
+    ])
+  else
+    throw new Error("Invalid ArrowFunction")
 }
-
-export class SwappableArrowFunctionBody extends ForkNode {}
