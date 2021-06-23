@@ -22,7 +22,7 @@ export class StringLiteralNode extends Node {
     | (this.innerText.includes('"') ? StringLiteralEscapes.Double : 0)
     | (this.innerText.includes("`") ? StringLiteralEscapes.Backtick : 0)
 
-  constructor(public text: string){
+  constructor(text: string){
     super(text)
   }
 

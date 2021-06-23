@@ -15,6 +15,7 @@ export abstract class Node {
   }
 
   id = idN++
+  text = ""
   children: readonly Node[] = []
   parent: Node | null = null
   index = -1
@@ -53,7 +54,7 @@ export abstract class Node {
           }))
     }
     else if(typeof args === "string")
-      this.toString = () => args
+      this.text = args
     this._applyChildren()
     type self = this
   }
@@ -72,9 +73,8 @@ export abstract class Node {
     })
   }
 
-  // may be overriden by constructor
   toString(context: ContextProvider = new ContextProvider()): string{
-    let acc = ""
+    let acc = this.text
     for(const child of this.children)
       acc += child.toString(context)
     return acc
