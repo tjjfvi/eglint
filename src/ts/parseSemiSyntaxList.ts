@@ -20,9 +20,7 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
     const optional = lastStatementChild && (false
             || !hasSemicolon
             || !nextChild
-            || true
-              && this.source.slice(lastStatementChild.end, nextChild.getStart(this.sourceFile)).includes("\n")
-              && !asiHazards.has(nextChildFirstChar!)
+            || !asiHazards.has(nextChildFirstChar!)
     )
     const stmtNode = this.parseTsNode(child)
     if(hasSemicolon)

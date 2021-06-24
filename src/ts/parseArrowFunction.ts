@@ -3,26 +3,18 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
 export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
-  // An ArrowFunction node can either be:
-  // - ArrowFunction [ OpenParenToken, SyntaxList[ ... ], CloseParenToken, EqualsGreaterThanToken, <Body> ]
-  // - ArrowFunction [ SyntaxList [ Parameter [ Identifier ] ], EqualsGreaterThanToken, <Body> ]
+  // An ArrowFunction node can be one of:
+  // - ArrowFunction [ "(", SyntaxList[ ... ], ")", "=>", <Body> ]
+  // - ArrowFunction [ "(", SyntaxList[ ... ], ")", ":", <ReturnType>, "=>", <Body> ]
+  // - ArrowFunction [ SyntaxList [ Parameter [ Identifier ] ], "=>", <Body> ]
+  // The last two nodes are always [ "=>", <Body> ], and the other nodes are always the signature
   const tsChildren = tsNode.getChildren(this.sourceFile)
-  if(tsChildren.length === 5)
-    return new TsNodeNode.for.ArrowFunction([
-      this.parseArrowFunctionParams(tsChildren.slice(0, 3)),
-      this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
-      this.parseTsNode(tsChildren[3]),
-      this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
-      this.parseArrowFunctionBody(tsChildren[4]),
-    ])
-  else if(tsChildren.length === 3)
-    return new TsNodeNode.for.ArrowFunction([
-      this.parseArrowFunctionParams(tsChildren.slice(0, 1)),
-      this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
-      this.parseTsNode(tsChildren[1]),
-      this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
-      this.parseArrowFunctionBody(tsChildren[2]),
-    ])
-  else
-    throw new Error("Invalid ArrowFunction")
+  const l = tsChildren.length
+  return new TsNodeNode.for.ArrowFunction([
+    this.parseArrowFunctionSig(tsChildren.slice(0, -2)),
+    this.parseTriviaBetween(tsChildren[l - 3], tsChildren[l - 2]),
+    this.parseTsNode(tsChildren[l - 2]),
+    this.parseTriviaBetween(tsChildren[l - 2], tsChildren[l - 1]),
+    this.parseArrowFunctionBody(tsChildren[l - 1]),
+  ])
 }

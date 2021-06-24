@@ -112,7 +112,7 @@ export default async (update: boolean, filterRaw: string[]) => {
         }
         else {
           console.log((updateOutput ? chalk : chalk.redBright)(
-            `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(outPath)}\n`,
+            `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(outPath)}`,
           ))
           const diff = createRichDiff("", outText)
           console.log(diff)

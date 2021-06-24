@@ -15,7 +15,7 @@ import { parseArrowFunction } from "./parseArrowFunction"
 import { parseCommaSyntaxList } from "./parseCommaSyntaxList"
 import { parseSemiSyntaxList } from "./parseSemiSyntaxList"
 import { parseArrowFunctionBody } from "./parseArrowFunctionBody"
-import { parseArrowFunctionParams } from "./parseArrowFunctionParams"
+import { parseArrowFunctionSig } from "./parseArrowFunctionSig"
 
 export class SourceFileNode extends Node {
 
@@ -113,7 +113,7 @@ export class SourceFileNode extends Node {
   }
 
   parseArrowFunction = parseArrowFunction
-  parseArrowFunctionParams = parseArrowFunctionParams
+  parseArrowFunctionSig = parseArrowFunctionSig
   parseArrowFunctionBody = parseArrowFunctionBody
   parseCommaSyntaxList = parseCommaSyntaxList
   parseSemiSyntaxList = parseSemiSyntaxList

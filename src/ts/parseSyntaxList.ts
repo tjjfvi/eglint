@@ -51,6 +51,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
     case ts.SyntaxKind.ObjectLiteralExpression:
     case ts.SyntaxKind.CallExpression:
     case ts.SyntaxKind.ArrowFunction:
+    case ts.SyntaxKind.ArrayBindingPattern:
       return this.parseCommaSyntaxList(tsNode)
     case ts.SyntaxKind.Block:
     case ts.SyntaxKind.SourceFile:
