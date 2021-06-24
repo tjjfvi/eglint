@@ -8,5 +8,5 @@ const c = (  a     : 123     )
 const d = (     a    , b     )=> [a, b]
 const e = (   [  a ]  ) => a 
 const f = (  ) => {   }
-const g = a => {
-a.a = a  ; return a; }
+const g = (a) => {
+a.a = a  ; return a }
