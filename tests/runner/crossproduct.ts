@@ -58,10 +58,11 @@ export default async (update: boolean, filterRaw: string[]) => {
       throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
 
     for(const refName of refNames) {
+      results.push(runTest(refName, refName))
       for(const subName of subNames)
         results.push(runTest(refName, subName))
-      for(const subRefName of refNames)
-        results.push(runTest(refName, subRefName))
+      // for(const subRefName of refNames)
+      //   results.push(runTest(refName, subRefName))
     }
 
     return (await Promise.all(results)).flat()
