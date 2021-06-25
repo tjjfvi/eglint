@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "ts-node tests/runner",
+    "tcu": "rm -rf tests/crossproduct/*/out; npm run test -- -u",
     "debug": "node --inspect-brk -r ts-node/register tests/runner",
     "index": "create-index -X ts -x ts -x tsx -Sui src/ -c {}; npm run lint"
   },
