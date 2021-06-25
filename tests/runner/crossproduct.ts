@@ -51,10 +51,6 @@ export default async (update: boolean, filterRaw: string[]) => {
 
     const getRefPath = (f: string) => joinPath(refDir, f)
     const getSubPath = (f: string) => joinPath(subDir, f)
-    const getOutPath = (f: string) => joinPath(outDir, f)
-
-    if(update)
-      await fs.mkdir(testPath(outDir), { recursive: true })
 
     const duplicateFilenames = refNames.filter(f => subNames.includes(f))
 
@@ -73,8 +69,17 @@ export default async (update: boolean, filterRaw: string[]) => {
     async function runTest(refName: string, subName: string): Promise<TestResult>{
       const refPath = getRefPath(refName)
       const subPath = (refNames.includes(subName) ? getRefPath : getSubPath)(subName)
-      const outPath = refName === subName ? refPath : getOutPath(`${subName}-${refName}`)
-      const id = `${testSet}/${subName}-${refName}`
+      const subNameBase = stripTsExtension(subName)
+      const refNameBase = stripTsExtension(refName)
+      const refOutDir = joinPath(outDir, refNameBase)
+
+      if(update)
+        await fs.mkdir(testPath(refOutDir), { recursive: true })
+
+      const outPath = refName === subName
+        ? refPath
+        : joinPath(refOutDir, `${subNameBase}.ts`)
+      const id = `${testSet}/${refNameBase}/${subNameBase}`
 
       if(filter.length && !(filter.includes(id) || filter.includes(testSet)))
         return { id, status: "skipped" }
@@ -133,4 +138,8 @@ export default async (update: boolean, filterRaw: string[]) => {
       }
     }
   }
+}
+
+function stripTsExtension(s: string){
+  return s.replace(/\.ts$/, "")
 }
