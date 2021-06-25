@@ -1,0 +1,12 @@
+
+// This is a comment
+const a = [9, 0b1001 /* same as 9 */, 9]
+
+;-2 + 3
+
+// Hello, world!
+const b = [
+  1,
+  2,
+  3,
+]

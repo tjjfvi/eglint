@@ -23,25 +23,25 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
     ? new ArrowFunctionExpressionBody(resultNode)
     : new TsNodeNode.for.Block([
       new TsNodeNode.for.OpenBraceToken("{"),
-      this.spaceTrivia(),
+      ...this.spaceTrivia(),
       new SyntaxListNode([
         new SyntaxListEntryNode(new TsNodeNode.for.ReturnStatement([
           new TsNodeNode.for.ReturnKeyword("return"),
-          this.spaceTrivia(),
+          ...this.spaceTrivia(),
           resultNode,
           new IndentNode(0),
         ])),
         new SyntaxListSeparatorNode([
-          this.emptyTrivia(),
+          ...this.emptyTrivia(),
           new OptionalSemiNode(
             new EmptyNode(),
             [new TsNodeNode.for.SemicolonToken(";")],
           ),
-          this.emptyTrivia(),
+          ...this.emptyTrivia(),
           new IndentNode(0),
         ]),
       ]),
-      this.spaceTrivia(),
+      ...this.spaceTrivia(),
       new TsNodeNode.for.OpenBraceToken("}"),
       new IndentNode(0),
     ])

@@ -1,9 +1,7 @@
 
 import ts from "typescript"
 import { Node } from "../Node"
-import { InterchangeableNode } from "../InterchangeableNode"
 import { NewlineNode } from "../NewlineNode"
-import { PositionalNode } from "../PositionalNode"
 import { syntaxKindName } from "./tsUtils"
 
 export class TsNodeNode extends Node {
@@ -13,6 +11,7 @@ export class TsNodeNode extends Node {
       || node instanceof TsNodeNode && node.isMultiline
       || node instanceof NewlineNode
       || node.children.some(TsNodeNode.checkMultiline)
+      || node.text.includes("\n")
   }
 
   isMultiline = TsNodeNode.checkMultiline(this)
@@ -50,18 +49,4 @@ export class TsNodeNode extends Node {
 }
 
 export class EmptyNode extends Node {}
-
-export class WhitespaceNode extends InterchangeableNode {
-
-  multiline = this.children.some(x => x instanceof NewlineNode)
-
-}
-
-export class WhitespacePositionalNode extends PositionalNode {
-
-  override get priority(){
-    return -1
-  }
-
-}
 

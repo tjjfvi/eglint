@@ -33,13 +33,13 @@ export abstract class Node {
       if(this.filterByChildren)
         this.filterGroup.filters = childClasses
           .map(Class =>
-            [Class, Class.prototype.priority, Class.prototype.requireContext] as const,
+            [Class, Class.prototype.priority, Class.prototype.required] as const,
           )
           .filter(([Class]) => Class.prototype.influenceParent)
           .sort((a, b) => b[1] - a[1])
-          .map(([Class, priority, requireContext]) => ({
+          .map(([Class, priority, required]) => ({
             priority,
-            required: requireContext ? "strong" : false,
+            required,
             filter(self, nodes){
               for(const child of self.children)
                 if(child.compareClass === Class) {
@@ -59,6 +59,10 @@ export abstract class Node {
     type self = this
   }
 
+  get required(): "strong" | "weak" | false{
+    return this.requireContext ? "strong" : false
+  }
+
   get influenceParent(){
     return true
   }
@@ -73,7 +77,7 @@ export abstract class Node {
     })
   }
 
-  toString(context: ContextProvider = new ContextProvider()): string{
+  toString(context = new ContextProvider()): string{
     let acc = this.text
     for(const child of this.children)
       acc += child.toString(context)

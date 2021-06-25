@@ -1,0 +1,12 @@
+
+const x =[
+  1 +2,
+  2 +3,
+  4 +5
+]
+;
+
+// Natural numbers
+const y =[ 0 /* debated */, 1, 2, 3, ]
+;
+

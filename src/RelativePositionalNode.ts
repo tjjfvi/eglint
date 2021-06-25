@@ -10,8 +10,20 @@ export abstract class RelativePositionalNode extends Node {
     filters: [
       { required: "weak", filter: siblingExistenceMatches(-1) },
       { required: "weak", filter: siblingExistenceMatches(+1) },
-      { filter: compareSiblings(-1) },
-      { filter: compareSiblings(+1) },
+      new FilterGroup({
+        mode: "or",
+        required: "strong",
+        filters: [
+          new FilterGroup({
+            mode: "and",
+            filters: [
+              { required: "strong", filter: compareSiblings(-1) },
+              { filter: compareSiblings(+1) },
+            ],
+          }),
+          { filter: compareSiblings(+1) },
+        ],
+      }),
     ],
   }))
 

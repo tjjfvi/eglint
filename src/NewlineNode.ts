@@ -8,7 +8,7 @@ export class NewlineNode extends InterchangeableNode {
     super()
   }
 
-  override toString(contextProvider: ContextProvider){
+  override toString(contextProvider = new ContextProvider()){
     const indentation = contextProvider.getContext(IndentationContext)
     indentation.level += this.deltaIndent
     return "\n" + indentation

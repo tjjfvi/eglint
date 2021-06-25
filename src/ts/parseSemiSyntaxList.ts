@@ -27,7 +27,7 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
       (stmtNode.children as unknown as Node[]).splice(stmtNode.children.length - 3, 2)
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
-      this.parseTriviaBetween(lastStatementChild, semicolonTsNode),
+      ...this.parseTriviaBetween(lastStatementChild, semicolonTsNode),
       optional
         ? hasSemicolon
           ? new OptionalSemiNode(this.parseTsNode(semicolonTsNode!), [new EmptyNode()])
@@ -36,7 +36,7 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
             [new TsNodeNode.for.SemicolonToken(";")],
           )
         : this.parseTsNode(semicolonTsNode!),
-      this.parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),
+      ...this.parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),
     ])))
   }
   return new SyntaxListNode(nodes)
