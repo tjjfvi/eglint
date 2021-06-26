@@ -12,16 +12,18 @@ const testPath = (relativePath = "") =>
 const file = (relativePath: string) =>
   fs.readFile(testPath(relativePath), "utf8")
 
-export type TestStatus = TestResult["status"]
-export type TestResult =
-  & { id: string }
-  & (
-    | { status: "passed" | "updated" | "skipped" | "errored" }
-    | { status: "failed" | "missing", diff: string }
-  )
+export type TestStatus = "passed" | "updated" | "skipped" | "errored" | "failed" | "missing"
+export type TestResult = { status: TestStatus }
 
 export default async (update: boolean, filterRaw: string[]) => {
-  const filter = filterRaw.map(s => s.replace(/^tests\/crossproduct\//, "").replace("/out/", "/"))
+  const filter = filterRaw.map(s => (
+    s
+      .replace(/^tests\/crossproduct\//, "")
+      .replace("/ref/", "/")
+      .replace("/sub/", "/")
+      .replace("/out/", "/")
+      .replace(/\.ts$/, "")
+  ))
 
   const testSets = await fs.readdir(testPath())
 
@@ -32,16 +34,9 @@ export default async (update: boolean, filterRaw: string[]) => {
     return node
   }, new Map())
 
-  const results: Promise<TestResult[]>[] = []
+  return (await Promise.all(testSets.map(runTestSet))).flat()
 
-  for(const testSet of testSets)
-    results.push(runTestSet(testSet))
-
-  return (await Promise.all(results)).flat()
-
-  async function runTestSet(testSet: string){
-    const results = []
-
+  async function runTestSet(testSet: string): Promise<TestResult[]>{
     const refDir = joinPath(testSet, "ref")
     const subDir = joinPath(testSet, "sub")
     const outDir = joinPath(testSet, "out")
@@ -52,24 +47,51 @@ export default async (update: boolean, filterRaw: string[]) => {
     const getRefPath = (f: string) => joinPath(refDir, f)
     const getSubPath = (f: string) => joinPath(subDir, f)
 
-    const duplicateFilenames = refNames.filter(f => subNames.includes(f))
+    const subFileResults = (await Promise.all(subNames.map(x => checkSubFile(x))))
+      .filter(<T>(x: T | null): x is T => x !== null)
 
-    if(duplicateFilenames.length)
-      throw new Error(`duplicate file names: ${duplicateFilenames.join(", ")}`)
+    if(subFileResults.some(x => x.status === "failed"))
+      return [
+        ...subFileResults,
+        ...Array.from(
+          { length: refNames.length * (subNames.length + 1) },
+          (): TestResult => ({ status: "skipped" }),
+        ),
+      ]
 
+    const results = []
     for(const refName of refNames) {
       results.push(runTest(refName, refName))
       for(const subName of subNames)
         results.push(runTest(refName, subName))
-      // for(const subRefName of refNames)
-      //   results.push(runTest(refName, subRefName))
     }
 
-    return (await Promise.all(results)).flat()
+    return [...subFileResults, ...(await Promise.all(results)).flat()]
+
+    async function checkSubFile(subName: string): Promise<TestResult | null>{
+      const subNameBase = stripTsExtension(subName)
+      if(subNameBase !== "all" && !refNames.includes(subName))
+        return null
+      if(filter.length && !(filter.includes(testSet) || filter.includes(`${testSet}/${subNameBase}`)))
+        return { status: "skipped" }
+      const contents = subNameBase === "all"
+        ? (await Promise.all(refNames.map(x => file(getRefPath(x))))).join("\n")
+        : await file(getRefPath(subName))
+      const existing = await file(getSubPath(subName))
+      if(contents === existing) return { status: "passed" }
+      console.log((update ? chalk.blueBright : chalk.redBright)(
+        `Subject ${getSubPath(subName)} changed:`,
+      ))
+      console.log(createRichDiff(existing, contents))
+      if(update)
+        await fs.writeFile(testPath(getSubPath(subName)), contents)
+
+      return { status: update ? "updated" : "failed" }
+    }
 
     async function runTest(refName: string, subName: string): Promise<TestResult>{
       const refPath = getRefPath(refName)
-      const subPath = (refNames.includes(subName) ? getRefPath : getSubPath)(subName)
+      const subPath = (subNames.includes(subName) ? getSubPath : getRefPath)(subName)
       const subNameBase = stripTsExtension(subName)
       const refNameBase = stripTsExtension(refName)
       const refOutDir = joinPath(outDir, refNameBase)
@@ -83,7 +105,7 @@ export default async (update: boolean, filterRaw: string[]) => {
       const id = `${testSet}/${refNameBase}/${subNameBase}`
 
       if(filter.length && !(filter.includes(id) || filter.includes(testSet)))
-        return { id, status: "skipped" }
+        return { status: "skipped" }
 
       let state = ""
       try {
@@ -103,39 +125,37 @@ export default async (update: boolean, filterRaw: string[]) => {
         const expectedText = await file(outPath).catch(() => null)
 
         if(outText === expectedText)
-          return { id, status: "passed" }
+          return { status: "passed" }
 
         const overrideUpdate = outPath === refPath
         const updateOutput = update && !overrideUpdate
 
         if(expectedText !== null) {
-          console.log((updateOutput ? chalk : chalk.redBright)(`Output changed in ${chalk.bold(outPath)}:`))
+          console.log((updateOutput ? chalk : chalk.redBright)(`Output ${chalk.bold(outPath)} changed:`))
           state = `diffing ${chalk.bold(outPath)}`
-          const diff = createRichDiff(expectedText, outText)
-          console.log(diff)
+          console.log(createRichDiff(expectedText, outText))
           if(!updateOutput)
-            return { id, status: "failed", diff }
+            return { status: "failed" }
         }
         else {
           console.log((updateOutput ? chalk : chalk.redBright)(
             `${updateOutput ? "Created" : "Missing"} output file ${chalk.bold(outPath)}`,
           ))
-          const diff = createRichDiff("", outText)
-          console.log(diff)
+          console.log(createRichDiff("", outText))
           if(!updateOutput)
-            return { id, status: "missing", diff }
+            return { status: "missing" }
         }
 
         state = `Writing ${chalk.bold(outPath)}`
         await fs.writeFile(testPath(outPath), outText)
-        return { id, status: "updated" }
+        return { status: "updated" }
       }
       catch (e) {
         console.log(chalk.redBright(`Error when ${state}:`))
         console.log(e)
         console.log()
 
-        return { id, status: "errored" }
+        return { status: "errored" }
       }
     }
   }
