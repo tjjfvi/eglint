@@ -63,7 +63,8 @@ export default async (update: boolean, filterRaw: string[]) => {
     for(const refName of refNames) {
       results.push(runTest(refName, refName))
       for(const subName of subNames)
-        results.push(runTest(refName, subName))
+        if(subName !== refName)
+          results.push(runTest(refName, subName))
     }
 
     return [...subFileResults, ...(await Promise.all(results)).flat()]
@@ -102,7 +103,7 @@ export default async (update: boolean, filterRaw: string[]) => {
       const outPath = refName === subName
         ? refPath
         : joinPath(refOutDir, `${subNameBase}.ts`)
-      const id = `${testSet}/${refNameBase}/${subNameBase}`
+      const id = refName === subName ? `${testSet}/${refNameBase}` : `${testSet}/${refNameBase}/${subNameBase}`
 
       if(filter.length && !(filter.includes(id) || filter.includes(testSet)))
         return { status: "skipped" }

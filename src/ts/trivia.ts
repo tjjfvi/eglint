@@ -15,11 +15,11 @@ export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Nod
 }
 
 export function emptyTrivia(this: SourceFileNode){
-  return [new TriviaNode([new WhitespaceNode([])])]
+  return [new TriviaNode(new WhitespaceNode([]))]
 }
 
 export function spaceTrivia(this: SourceFileNode){
-  return [new TriviaNode([new WhitespaceNode([new SpaceNode(1)])])]
+  return [new TriviaNode(new WhitespaceNode([new SpaceNode(1)]))]
 }
 
 export function parseTrivia(this: SourceFileNode, start: number, end: number){
@@ -38,14 +38,14 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
     if((match = /^( ?)\/\/( ?)(.*)\n( *)/.exec(text))) {
       const [, spaceBeforeSlashes, spaceAfterSlashes, innerText, indent] = match
       finishWhitespaceChildren()
-      nodes.push(new TriviaNode([new EndlineComment(
+      const deltaIndent = calculateDeltaIndent(indent)
+      nodes.push(new TriviaNode(new EndlineComment(
         !!spaceBeforeSlashes,
         !!spaceAfterSlashes,
         innerText,
-        calculateDeltaIndent(indent),
-      )], deltaIndentAcc))
-      whitespaceChildren.push(new NewlineNode(calculateDeltaIndent(indent)))
-      deltaIndentAcc = 0
+        deltaIndent,
+      )))
+      whitespaceChildren.push(new NewlineNode(deltaIndent))
     }
     else if((match = /^\n( *)/.exec(text)))
       whitespaceChildren.push(new NewlineNode(calculateDeltaIndent(match[1])))
@@ -53,7 +53,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
       whitespaceChildren.push(new SpaceNode(match[0].length))
     else if((match = /^\/\*[^]*\*\//.exec(text))) {
       finishWhitespaceChildren()
-      nodes.push(new TriviaNode([new BlockComment(match[0])]))
+      nodes.push(new TriviaNode(new BlockComment(match[0])))
     }
     else
       throw new Error("Encountered invalid trivia")
@@ -62,7 +62,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
   finishWhitespaceChildren()
   return nodes
   function finishWhitespaceChildren(){
-    nodes.push(new TriviaNode([new WhitespaceNode(whitespaceChildren)], deltaIndentAcc))
+    nodes.push(new TriviaNode(new WhitespaceNode(whitespaceChildren, deltaIndentAcc)))
     whitespaceChildren = []
     deltaIndentAcc = 0
   }
@@ -71,8 +71,8 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
 export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[], IndentNode]{
   let deltaIndent = 0
   for(const child of children)
-    if(child instanceof TriviaNode)
-      deltaIndent += child.deltaIndent
+    if(child instanceof TriviaNode && child.children[0] instanceof WhitespaceNode)
+      deltaIndent += child.children[0].deltaIndent
   children.push(new IndentNode(-deltaIndent))
   this.indentLevel -= deltaIndent
   return children as [...Node[], IndentNode]
@@ -80,8 +80,8 @@ export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[]
 
 export class TriviaNode extends RelativePositionalNode {
 
-  constructor(children: readonly Node[], public deltaIndent = 0){
-    super(children)
+  constructor(child: Node){
+    super([child])
   }
 
   override get priority(){
@@ -94,7 +94,30 @@ export class TriviaNode extends RelativePositionalNode {
 
 }
 
-export class WhitespaceNode extends InterchangeableNode {}
+export class WhitespaceNode extends InterchangeableNode {
+
+  constructor(children: Node[], public deltaIndent = 0){
+    super(children)
+  }
+
+  contentFilter = this.filterGroup.addFilter({
+    priority: 1,
+    filter(self, nodes){
+      return nodes.filter(x =>
+        x.deltaIndent === self.deltaIndent
+        && x.toEqualityString() === self.toEqualityString(),
+      )
+    },
+  })
+
+  toEqualityString(){
+    const contextProvider = new ContextProvider()
+    const indentation = contextProvider.getContext(IndentationContext)
+    indentation.level = Math.max(0, -this.deltaIndent)
+    return this.deltaIndent + this.toString(contextProvider)
+  }
+
+}
 
 export class EndlineComment extends NewlineNode {
 

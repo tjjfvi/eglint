@@ -1,4 +1,4 @@
-const a = (x) => 5
+const a = ( x )=>5
 const b = (x): 123=>{
   return 123
 }

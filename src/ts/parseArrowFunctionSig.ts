@@ -19,7 +19,9 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
         this.parseTsNode(identifier),
         [new ArrowFunctionSigNode([
           new TsNodeNode.for.OpenParenToken("("),
+          ...this.emptyTrivia(),
           this.parseTsNode(tsChildren[0]),
+          ...this.emptyTrivia(),
           new TsNodeNode.for.OpenParenToken(")"),
           new IndentNode(0),
         ])],

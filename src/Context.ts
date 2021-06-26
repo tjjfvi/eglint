@@ -1,7 +1,7 @@
 
 export class ContextProvider {
 
-  private map = new Map<new(contextProvider: ContextProvider) => any, any>()
+  constructor(private map = new Map<new(contextProvider: ContextProvider) => any, any>()){}
 
   getContext<T extends Context>(ctor: new (contextProvider: ContextProvider) => T): T{
     const existing = this.map.get(ctor)

@@ -3,8 +3,13 @@ import ts from "typescript"
 import { Node } from "../Node"
 import { NewlineNode } from "../NewlineNode"
 import { syntaxKindName } from "./tsUtils"
+import { IndentNode } from "../IndentNode"
 
 export class TsNodeNode extends Node {
+
+  constructor(args: readonly [...Node[], IndentNode] | string){
+    super(args)
+  }
 
   static checkMultiline(node: Node): boolean{
     return false
