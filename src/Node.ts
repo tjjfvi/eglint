@@ -148,7 +148,7 @@ export abstract class Node {
   toDebugString(contextProvider = new ContextProvider()){
     let acc = `${this.constructor.name} #${this.id}`
     if(!this.children.length)
-      if(this.toString !== Node.prototype.toString)
+      if(this.text || this.toString !== Node.prototype.toString)
         acc += " " + inspect(this.toString(contextProvider))
       else
         acc += " {}"
