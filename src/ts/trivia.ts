@@ -132,14 +132,14 @@ export class EndlineComment extends NewlineNode {
 
   override toString(contextProvider = new ContextProvider()){
     let text = ""
-    if(this.spaceBeforeSlashes && !(this.prevLeaf() instanceof NewlineNode))
+    if(this.spaceBeforeSlashes && this.findPrevCousin(x => x.hasText)?.toString().slice(-1) !== "\n")
       text += " "
     text += "//"
     if(this.spaceAfterSlashes)
       text += " "
     text += this.innerText
     const indentation = contextProvider.getContext(IndentationContext)
-    if(!(this.nextLeaf() instanceof NewlineNode)) {
+    if(this.findNextCousin(x => x.hasText)?.toString()[0] !== "\n") {
       indentation.level += this.deltaIndent
       text += "\n" + indentation
     }
@@ -157,6 +157,10 @@ export class EndlineComment extends NewlineNode {
 
   override get required(): "strong"{
     return "strong"
+  }
+
+  override get hasText(){
+    return true
   }
 
 }

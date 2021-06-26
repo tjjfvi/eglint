@@ -148,7 +148,7 @@ export abstract class Node {
   toDebugString(contextProvider = new ContextProvider()){
     let acc = `${this.constructor.name} #${this.id}`
     if(!this.children.length)
-      if(this.text || this.toString !== Node.prototype.toString)
+      if(this.hasText)
         acc += " " + inspect(this.toString(contextProvider))
       else
         acc += " {}"
@@ -161,22 +161,60 @@ export abstract class Node {
     return acc
   }
 
-  prevLeaf(): Node | null{
-    const nextSibling = this.parent?.children[this.index - 1]
-    if(!nextSibling) return this.parent?.prevLeaf() ?? null
-    let node = nextSibling
-    while(node.children.length)
-      node = node.children[node.children.length - 1]
-    return node
+  findPrevCousin(predicate: (x: Node) => boolean | "skip"): Node | null{
+    let cur: Node = this
+    while(true) {
+      if(!cur.parent) return null
+      for(let i = cur.index - 1; i > 0; i--) {
+        const sibling = cur.parent.children[i]
+        const result = sibling.findLastDescendant(predicate)
+        if(result) return result
+      }
+      cur = cur.parent
+    }
   }
 
-  nextLeaf(): Node | null{
-    const nextSibling = this.parent?.children[this.index + 1]
-    if(!nextSibling) return this.parent?.nextLeaf() ?? null
-    let node = nextSibling
-    while(node.children.length)
-      node = node.children[0]
-    return node
+  findLastDescendant(predicate: (x: Node) => boolean | "skip"): Node | null{
+    let stack: Node[] = [this]
+    let cur
+    while((cur = stack.pop())) {
+      const result = predicate(cur)
+      if(result === true) return cur
+      if(result !== "skip")
+        for(let i = 0; i < cur.children.length; i++)
+          stack.push(cur.children[i])
+    }
+    return null
+  }
+
+  findNextCousin(predicate: (x: Node) => boolean | "skip"): Node | null{
+    let cur: Node = this
+    while(true) {
+      if(!cur.parent) return null
+      for(let i = cur.index + 1; i < cur.parent.children.length; i++) {
+        const sibling = cur.parent.children[i]
+        const result = sibling.findFirstDescendant(predicate)
+        if(result) return result
+      }
+      cur = cur.parent
+    }
+  }
+
+  findFirstDescendant(predicate: (x: Node) => boolean | "skip"): Node | null{
+    let stack: Node[] = [this]
+    let cur
+    while((cur = stack.pop())) {
+      const result = predicate(cur)
+      if(result === true) return cur
+      if(result !== "skip")
+        for(let i = cur.children.length - 1; i >= 0; i--)
+          stack.push(cur.children[i])
+    }
+    return null
+  }
+
+  get hasText(){
+    return !!this.text
   }
 
 }

@@ -14,4 +14,8 @@ export class NewlineNode extends InterchangeableNode {
     return "\n" + indentation
   }
 
+  override get hasText(){
+    return true
+  }
+
 }

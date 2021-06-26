@@ -1,10 +1,10 @@
 import ts from "typescript"
 import { IndentNode } from "../IndentNode"
 import { ForkNode } from "../ForkNode"
-import { OptionalSemiNode } from "./parseSemiSyntaxList"
+import { SemiNode } from "./parseSemiSyntaxList"
 import { SyntaxListNode, SyntaxListEntryNode, SyntaxListSeparatorNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
-import { EmptyNode, TsNodeNode } from "./TsNodeNode"
+import { TsNodeNode } from "./TsNodeNode"
 import { SingletonNode } from "../SingletonNode"
 
 export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node){
@@ -33,10 +33,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
         ])),
         new SyntaxListSeparatorNode([
           ...this.emptyTrivia(),
-          new OptionalSemiNode(
-            new EmptyNode(),
-            [new TsNodeNode.for.SemicolonToken(";")],
-          ),
+          new SemiNode(false),
           ...this.emptyTrivia(),
           new IndentNode(0),
         ]),

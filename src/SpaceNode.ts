@@ -10,4 +10,8 @@ export class SpaceNode extends InterchangeableNode {
     return " ".repeat(this.count)
   }
 
+  override get hasText(){
+    return !!this.count
+  }
+
 }

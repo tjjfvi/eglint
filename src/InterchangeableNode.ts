@@ -16,7 +16,7 @@ export abstract class InterchangeableNode extends Node {
   }
 
   override _adaptTo(node: this | null): Node{
-    return node ?? this
+    return node?.cloneDeep() ?? this
   }
 
   override get requireContext(){
