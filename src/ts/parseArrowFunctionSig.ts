@@ -1,5 +1,6 @@
 import ts from "typescript"
 import { ForkNode } from "../ForkNode"
+import { IndentNode } from "../IndentNode"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
@@ -20,6 +21,7 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
           new TsNodeNode.for.OpenParenToken("("),
           this.parseTsNode(tsChildren[0]),
           new TsNodeNode.for.OpenParenToken(")"),
+          new IndentNode(0),
         ])],
       )
     }

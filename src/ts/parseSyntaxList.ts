@@ -1,11 +1,16 @@
 import ts from "typescript"
-import { SingletonNode } from ".."
+import { Node } from "../Node"
 import { RelativePositionalNode } from "../RelativePositionalNode"
+import { SingletonNode } from "../SingletonNode"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 import { syntaxKindName } from "./tsUtils"
 
 export class SyntaxListNode extends TsNodeNode {
+
+  constructor(children: Node[]){
+    super(children as never)
+  }
 
   isEmptyFilter = this.filterGroup.addFilter({
     required: "strong",

@@ -68,14 +68,14 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
   }
 }
 
-export function finishTrivia(this: SourceFileNode, children: Node[]){
+export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[], IndentNode]{
   let deltaIndent = 0
   for(const child of children)
     if(child instanceof TriviaNode)
       deltaIndent += child.deltaIndent
   children.push(new IndentNode(-deltaIndent))
   this.indentLevel -= deltaIndent
-  return children
+  return children as [...Node[], IndentNode]
 }
 
 export class TriviaNode extends RelativePositionalNode {
