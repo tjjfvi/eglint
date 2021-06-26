@@ -1,5 +1,6 @@
-import ts, { Node } from "typescript"
-import { ForkNode } from ".."
+import ts from "typescript"
+import { ForkNode } from "../ForkNode"
+import { Node } from "../Node"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { EmptyNode, TsNodeNode } from "./TsNodeNode"
@@ -18,13 +19,15 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
     const nextChild = children[i + 1] as ts.Node | undefined
     const nextChildFirstChar = nextChild && this.source.slice(nextChild.getStart(this.sourceFile)).slice(0, 1)
     const optional = lastStatementChild && (false
-            || !hasSemicolon
-            || !nextChild
-            || !asiHazards.has(nextChildFirstChar!)
+      || !hasSemicolon
+      || !nextChild
+      || !asiHazards.has(nextChildFirstChar!)
     )
-    const stmtNode = this.parseTsNode(child)
+    const stmtNode = lastStatementChild
+      ? this.parseTsNode(child, hasSemicolon ? grandchildren.slice(0, -1) : grandchildren)
+      : new TsNodeNode.for.EmptyStatement("")
     if(hasSemicolon)
-      (stmtNode.children as unknown as Node[]).splice(stmtNode.children.length - 3, 2)
+      (stmtNode.children as Node[]).splice(stmtNode.children.length - 3, 2)
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.parseTriviaBetween(lastStatementChild, semicolonTsNode),

@@ -25,7 +25,11 @@ export class SourceFileNode extends Node {
     this._applyChildren()
   }
 
-  parseTsNode(tsNode: ts.Node): Node{
+  parseTsNode(
+    tsNode: ts.Node,
+    // May have semicolon sliced off if tsNode is a statement
+    tsChildren = tsNode.getChildren(this.sourceFile),
+  ): Node{
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
       return this.parseSyntaxList(tsNode as ts.SyntaxList)
     if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
@@ -34,8 +38,6 @@ export class SourceFileNode extends Node {
       return this.parseArrowFunction(tsNode)
     if(tsNode.kind === ts.SyntaxKind.BinaryExpression)
       return this.parseBinaryExpression(tsNode)
-
-    const tsChildren = tsNode.getChildren(this.sourceFile)
 
     if(tsChildren.length)
       return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsNode.getChildren(this.sourceFile)))
