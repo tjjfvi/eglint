@@ -1,72 +1,24 @@
 
-import { diffWords } from "diff"
+import { diffLines } from "diff"
 import chalk from "chalk"
 
 const lineStart = /^(?=[^])/gm
 
 export function createRichDiff(expected: string, actual: string){
-  if(!expected.endsWith("\n"))
-    expected += "\n"
-  if(!actual.endsWith("\n"))
+  if(actual && !actual.endsWith("\n"))
     actual += "\n"
-
-  let oldLine = ""
-  let newLine = ""
-  let anyNeutral = false
-
-  let delAcc = ""
-  let addAcc = ""
+  if(expected && !expected.endsWith("\n"))
+    expected += "\n"
 
   let output = ""
 
-  for(const diffPart of diffWords(expected, actual, { ignoreWhitespace: false }))
-    for(const content of diffPart.value.split(/(\n)/)) { // "abc\ndef".split(/(\n)/) = ["abc", "\n", "def"]
-      if(!content) continue
-
-      const boldContent = content === "\n" || !anyNeutral ? content : chalk.bold(content)
-
-      if(diffPart.added)
-        newLine += boldContent
-      else if(diffPart.removed)
-        oldLine += boldContent
-      else {
-        if(content !== "\n" && !anyNeutral) {
-          anyNeutral = true
-          oldLine = chalk.bold(oldLine)
-          newLine = chalk.bold(newLine)
-        }
-        newLine += content
-        oldLine += content
-      }
-
-      if(oldLine && !oldLine.endsWith("\n") || newLine && !newLine.endsWith("\n"))
-        continue
-
-      if(oldLine === newLine) {
-        output += delAcc
-        output += addAcc
-        output += newLine.replace(lineStart, chalk.dim("· "))
-        oldLine = ""
-        newLine = ""
-        delAcc = ""
-        addAcc = ""
-      }
-      else {
-        if(oldLine) {
-          delAcc += chalk.red(oldLine.replace(lineStart, "- "))
-          oldLine = ""
-        }
-        if(newLine) {
-          addAcc += chalk.green(newLine.replace(lineStart, "+ "))
-          newLine = ""
-        }
-      }
-
-      anyNeutral = false
-    }
-
-  output += delAcc
-  output += addAcc
+  for(const diffPart of diffLines(expected, actual))
+    if(diffPart.added)
+      output += chalk.green(diffPart.value.replace(lineStart, "+ "))
+    else if(diffPart.removed)
+      output += chalk.red(diffPart.value.replace(lineStart, "- "))
+    else
+      output += diffPart.value.replace(lineStart, chalk.dim("· "))
 
   return output
 }
