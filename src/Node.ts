@@ -161,6 +161,24 @@ export abstract class Node {
     return acc
   }
 
+  prevLeaf(): Node | null{
+    const nextSibling = this.parent?.children[this.index - 1]
+    if(!nextSibling) return this.parent?.prevLeaf() ?? null
+    let node = nextSibling
+    while(node.children.length)
+      node = node.children[node.children.length - 1]
+    return node
+  }
+
+  nextLeaf(): Node | null{
+    const nextSibling = this.parent?.children[this.index + 1]
+    if(!nextSibling) return this.parent?.nextLeaf() ?? null
+    let node = nextSibling
+    while(node.children.length)
+      node = node.children[0]
+    return node
+  }
+
 }
 
 const filterInstanceOf = cacheFn(

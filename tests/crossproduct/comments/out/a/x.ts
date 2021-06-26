@@ -9,6 +9,7 @@ const a = [
 const b = [
   4,
   5/* fyi this number is super great */,
+  // test
   6,
 ]
 

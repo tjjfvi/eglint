@@ -6,7 +6,8 @@ const a = [
 
 // foo bar baz
 const b = [4,5
-  /* fyi this number is super great */,6,]
+  /* fyi this number is super great */, // test
+  6,]
 
 c = d;
 
