@@ -7,6 +7,7 @@ import { inspect } from "./utils"
 let idN = 0
 
 export type NodeClass<T extends Node> = (new (...args: any) => T) & Omit<typeof Node, never>
+export type AbstractNodeClass<T extends Node> = (abstract new (...args: any) => T) & Omit<typeof Node, never>
 
 export abstract class Node {
 
@@ -29,33 +30,12 @@ export abstract class Node {
   constructor(args?: readonly Node[] | string){
     if(args instanceof Array) {
       this.children = args
-      const childClasses = [...new Set(this.children.map(x => x.compareClass))]
+      this._applyChildren()
       if(this.filterByChildren)
-        this.filterGroup.filters = childClasses
-          .map(Class =>
-            [Class, Class.prototype.priority, Class.prototype.required] as const,
-          )
-          .filter(([Class]) => Class.prototype.influenceParent)
-          .sort((a, b) => b[1] - a[1])
-          .map(([Class, priority, required]) => ({
-            priority,
-            required,
-            filter<T extends Node>(self: T, nodes: readonly T[]){
-              for(const child of self.children)
-                if(child.compareClass === Class) {
-                  const children = nodes.flatMap(x => x.children)
-                  const filteredChildren = child.select(children, [])
-                  nodes = [...new Set(filteredChildren.map(x => x.parent as T))]
-                  if(!nodes.length)
-                    break
-                }
-              return nodes
-            },
-          }))
+        this._addChildrenFilters()
     }
     else if(typeof args === "string")
       this.text = args
-    this._applyChildren()
     this.init()
   }
 
@@ -71,12 +51,33 @@ export abstract class Node {
 
   protected _applyChildren(){
     this.children = this.children.map((child, i) => {
-      if(child.parent)
+      if(child.parent && child.parent !== this)
         child = child.cloneDeep()
       child.parent = this
       child.index = i
       return child
     })
+  }
+
+  protected _addChildrenFilters(){
+    this.filterGroup.filters = [...new Set(this.children.map(x => x.compareClass))]
+      .filter(Class => Class.prototype.influenceParent)
+      .sort((a, b) => b.prototype.priority - a.prototype.priority)
+      .map(Class => ({
+        priority: Class.prototype.priority,
+        required: Class.prototype.required,
+        filter<T extends Node>(self: T, nodes: readonly T[]){
+          for(const child of self.children)
+            if(child.compareClass === Class) {
+              const children = nodes.flatMap(x => x.children)
+              const filteredChildren = child.select(children, [])
+              nodes = [...new Set(filteredChildren.map(x => x.parent as T))]
+              if(!nodes.length)
+                break
+            }
+          return nodes
+        },
+      }))
   }
 
   toString(context = new ContextProvider()): string{
@@ -116,17 +117,25 @@ export abstract class Node {
     return this._adaptTo(filteredNodes[0] ?? null, filteredNodes, allReferenceNodes)
   }
 
+  get adaptStages(): readonly AbstractNodeClass<Node>[]{
+    return [Node]
+  }
+
   protected _adaptTo(
     selectedReferenceNode: this | null,
     selectedReferenceNodes: readonly this[],
     allReferenceNodes: readonly Node[],
   ): Node{
-    selectedReferenceNode
+    const selectedChildren = selectedReferenceNodes.flatMap(x => x.children)
     const adapted = this.clone()
-    adapted.children = this.children.map(c =>
-      c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),
-    )
-    adapted._applyChildren()
+    for(const Class of this.adaptStages) {
+      adapted.children = adapted.children.map(c => (
+        c instanceof Class
+          ? c.adaptTo(selectedChildren, allReferenceNodes)
+          : c
+      ))
+      adapted._applyChildren()
+    }
     return adapted
   }
 

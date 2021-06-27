@@ -1,14 +1,12 @@
 import ts from "typescript"
-import { FilterGroup } from "../FilterGroup"
+import { InterchangeableNode } from "../InterchangeableNode"
 import { Node } from "../Node"
-import { predicateFilter } from "../predicateFilter"
 import { propertyFilter } from "../propertyFilter"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { TriviaNode } from "./trivia"
 import { TsNodeNode } from "./TsNodeNode"
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
   const children = tsNode.getChildren()
   const nodes = []
@@ -34,72 +32,38 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
 
 export class SemiSyntaxListNode extends SyntaxListNode {
 
-  override _adaptTo(
-    _selectedReferenceNode: this | null,
-    selectedReferenceNodes: readonly this[],
-    allReferenceNodes: readonly Node[],
-  ): Node{
-    const clone1 = this.clone()
-    clone1.children = this.children.map(c =>
-      c instanceof SyntaxListEntryNode
-        ? c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes)
-        : c,
-    )
-    clone1._applyChildren()
-    const clone2 = clone1.clone()
-    clone2.children = clone1.children.map(c =>
-      c instanceof SyntaxListEntryNode
-        ? c
-        : c.adaptTo(selectedReferenceNodes.flatMap(c => c.children), allReferenceNodes),
-    )
-    for(const c of clone1.children)
-      c.parent = null
-    clone2._applyChildren()
-    return clone2
+  override get adaptStages(){
+    return [SyntaxListEntryNode, SyntaxListSeparatorNode]
   }
 
 }
 
-const asiHazards = new Set("+-*/([`")
-export class SemiNode extends Node {
+const asiHazards = [..."+-*/([`"] // https://jsbench.me/aykqfs958p
+export class SemiNode extends InterchangeableNode {
 
   constructor(public present: boolean){
     super()
-    this.filterGroup.addFilter(new FilterGroup({
-      mode: "and",
-      filters: [
-        predicateFilter((self, other) => (
-          self.semiRequired
-            ? other.semiRequired || other.present
-            : !other.semiRequired
-        )),
-        propertyFilter("present"),
-      ],
-    }))
+    this.filterGroup.addFilters([
+      propertyFilter("semiRequired"),
+      propertyFilter("present"),
+    ])
   }
 
   get semiRequired(){
     const nextChar = this.findNextCousin(x => x instanceof TriviaNode ? "skip" : x.hasText)?.toString()[0]
-    return !!nextChar && asiHazards.has(nextChar)
+    return !!nextChar && asiHazards.includes(nextChar)
   }
 
   override toString(){
     return this.present || this.semiRequired ? ";" : ""
   }
 
-  override get requireContext(){
-    return true
-  }
-
   override get hasText(){
     return this.present || this.semiRequired
   }
 
-  override _adaptTo(node: this | null): Node{
-    if(!node) return this
-    const clone = this.clone()
-    clone.present = node.present
-    return clone
+  override get requireContext(){
+    return true
   }
 
 }

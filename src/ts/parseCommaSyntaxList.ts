@@ -1,8 +1,8 @@
 import ts, { SyntaxList } from "typescript"
-import { ForkNode } from "../ForkNode"
+import { InterchangeableNode } from "../InterchangeableNode"
+import { propertyFilter } from "../propertyFilter"
 import { SyntaxListSeparatorNode, SyntaxListEntryNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
-import { EmptyNode, TsNodeNode } from "./TsNodeNode"
 
 export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
   const children = tsNode.getChildren()
@@ -12,7 +12,7 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
       nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
         ...this.parseTriviaBetween(children[i - 1], child),
         i === children.length - 1
-          ? new TrailingCommaNode(this.parseTsNode(child), [new EmptyNode()])
+          ? new TrailingCommaNode(true)
           : this.parseTsNode(child),
         ...this.parseTriviaBetween(child, children[i + 1]),
       ])))
@@ -21,13 +21,26 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
   if(children.length && children[children.length - 1].kind !== ts.SyntaxKind.CommaToken)
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.emptyTrivia(),
-      new TrailingCommaNode(new EmptyNode(), [new TsNodeNode.for.CommaToken(",")]),
+      new TrailingCommaNode(false),
       ...this.emptyTrivia(),
     ])))
   return new SyntaxListNode(nodes)
 }
 
-export class TrailingCommaNode extends ForkNode {
+export class TrailingCommaNode extends InterchangeableNode {
+
+  constructor(public present: boolean){
+    super()
+    this.filterGroup.addFilter(propertyFilter("present"))
+  }
+
+  override toString(){
+    return this.present ? "," : ""
+  }
+
+  override get hasText(){
+    return this.present
+  }
 
   override get requireContext(){
     return true

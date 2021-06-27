@@ -106,6 +106,10 @@ export class TriviaNode extends Node {
 
 export class WhitespaceNode extends InterchangeableNode {
 
+  override get priority(){
+    return -1
+  }
+
   constructor(children: Node[], public deltaIndent = 0){
     super(children)
   }
