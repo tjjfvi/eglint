@@ -1,6 +1,7 @@
 import ts from "typescript"
 import { Node } from "../Node"
-import { RelativePositionalNode } from "../RelativePositionalNode"
+import { propertyFilter } from "../propertyFilter"
+import { relativePositionFilter } from "../relativePositionFilter"
 import { SingletonNode } from "../SingletonNode"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
@@ -12,12 +13,17 @@ export class SyntaxListNode extends TsNodeNode {
     super(children as never)
   }
 
-  isEmptyFilter = this.filterGroup.addFilter({
-    required: "strong",
-    filter(self, nodes){
-      return nodes.filter(x => !!x.children.length === !!self.children.length)
-    },
-  })
+  override init(){
+    super.init()
+    this.filterGroup.addFilter({
+      required: "strong",
+      filter: propertyFilter("isEmpty"),
+    })
+  }
+
+  get isEmpty(){
+    return !!this.children.length
+  }
 
   override get priority(){
     return .4
@@ -41,7 +47,16 @@ export class SyntaxListEntryNode extends SingletonNode {
 
 }
 
-export class SyntaxListSeparatorNode extends RelativePositionalNode {
+export class SyntaxListSeparatorNode extends Node {
+
+  override init(){
+    super.init()
+    this.filterGroup.addFilter({
+      priority: 1,
+      required: "weak",
+      filter: relativePositionFilter,
+    })
+  }
 
   override get requireContext(){
     return true

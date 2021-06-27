@@ -4,6 +4,7 @@ import { Node } from "../Node"
 import { NewlineNode } from "../NewlineNode"
 import { syntaxKindName } from "./tsUtils"
 import { IndentNode } from "../IndentNode"
+import { propertyFilter } from "../propertyFilter"
 
 export class TsNodeNode extends Node {
 
@@ -21,12 +22,13 @@ export class TsNodeNode extends Node {
 
   isMultiline = TsNodeNode.checkMultiline(this)
 
-  multilineFilter = this.filterGroup.addFilter({
-    priority: .5,
-    filter(self, nodes){
-      return nodes.filter(x => x.isMultiline === self.isMultiline)
-    },
-  })
+  override init(){
+    super.init()
+    this.filterGroup.addFilter({
+      priority: .5,
+      filter: propertyFilter("isMultiline"),
+    })
+  }
 
   static for: Record<ts.SyntaxKind | keyof typeof ts.SyntaxKind, typeof TsNodeNode> = Object.fromEntries(
     [...new Set(Object.values(ts.SyntaxKind))]

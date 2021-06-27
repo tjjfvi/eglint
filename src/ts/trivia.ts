@@ -6,8 +6,9 @@ import { IndentationContext, IndentNode } from "../IndentNode"
 import { NewlineNode } from "../NewlineNode"
 import { SpaceNode } from "../SpaceNode"
 import { InterchangeableNode } from "../InterchangeableNode"
-import { RelativePositionalNode } from "../RelativePositionalNode"
+import { relativePositionFilter } from "../relativePositionFilter"
 import { ContextProvider } from "../Context"
+import { propertyFilter } from "../propertyFilter"
 
 export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Node){
   if(!a || !b) return this.emptyTrivia()
@@ -78,14 +79,23 @@ export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[]
   return children as [...Node[], IndentNode]
 }
 
-export class TriviaNode extends RelativePositionalNode {
+export class TriviaNode extends Node {
 
   constructor(child: Node){
     super([child])
+    this.filterGroup.addFilter({
+      priority: 1,
+      required: "weak",
+      filter: relativePositionFilter,
+    })
   }
 
   override get priority(){
     return -1
+  }
+
+  override get requireContext(){
+    return true
   }
 
   override get required(): false{
@@ -100,17 +110,15 @@ export class WhitespaceNode extends InterchangeableNode {
     super(children)
   }
 
-  contentFilter = this.filterGroup.addFilter({
-    priority: 1,
-    filter(self, nodes){
-      return nodes.filter(x =>
-        x.deltaIndent === self.deltaIndent
-        && x.toEqualityString() === self.toEqualityString(),
-      )
-    },
-  })
+  override init(){
+    super.init()
+    this.filterGroup.addFilter({
+      priority: 1,
+      filter: propertyFilter("equalityString"),
+    })
+  }
 
-  toEqualityString(){
+  get equalityString(){
     const contextProvider = new ContextProvider()
     const indentation = contextProvider.getContext(IndentationContext)
     indentation.level = Math.max(0, -this.deltaIndent)

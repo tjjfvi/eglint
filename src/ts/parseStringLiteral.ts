@@ -1,6 +1,8 @@
 import ts from "typescript"
 import { FilterGroup } from "../FilterGroup"
 import { Node } from "../Node"
+import { predicateFilter } from "../predicateFilter"
+import { propertyFilter } from "../propertyFilter"
 import { SourceFileNode } from "./SourceFileNode"
 
 export function parseStringLiteral(this: SourceFileNode, tsNode: ts.Node){
@@ -37,22 +39,12 @@ export class StringLiteralNode extends Node {
         filters: [
           {
             required: "weak",
-            filter(self, nodes){
-              return nodes.filter(x => x.escapes === self.escapes)
-            },
+            filter: propertyFilter("escapes"),
           },
-          {
-            filter(self, nodes){
-              return nodes.filter(x => (self.escapes & x.escapes) === self.escapes)
-            },
-          },
+          predicateFilter((self, other) => (self.escapes & other.escapes) === self.escapes),
         ],
       }),
-      {
-        filter(self, nodes){
-          return nodes.filter(x => x.quote === self.quote)
-        },
-      },
+      propertyFilter("quote"),
     ],
   }))
 

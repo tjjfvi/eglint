@@ -40,12 +40,12 @@ export abstract class Node {
           .map(([Class, priority, required]) => ({
             priority,
             required,
-            filter(self, nodes){
+            filter<T extends Node>(self: T, nodes: readonly T[]){
               for(const child of self.children)
                 if(child.compareClass === Class) {
                   const children = nodes.flatMap(x => x.children)
                   const filteredChildren = child.select(children, [])
-                  nodes = [...new Set(filteredChildren.map(x => x.parent as self))]
+                  nodes = [...new Set(filteredChildren.map(x => x.parent as T))]
                   if(!nodes.length)
                     break
                 }
@@ -56,8 +56,10 @@ export abstract class Node {
     else if(typeof args === "string")
       this.text = args
     this._applyChildren()
-    type self = this
+    this.init()
   }
+
+  init(){}
 
   get required(): "strong" | "weak" | false{
     return this.requireContext ? "strong" : false

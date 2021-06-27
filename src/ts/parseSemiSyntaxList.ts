@@ -1,6 +1,8 @@
 import ts from "typescript"
 import { FilterGroup } from "../FilterGroup"
 import { Node } from "../Node"
+import { predicateFilter } from "../predicateFilter"
+import { propertyFilter } from "../propertyFilter"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { TriviaNode } from "./trivia"
@@ -66,16 +68,12 @@ export class SemiNode extends Node {
     this.filterGroup.addFilter(new FilterGroup({
       mode: "and",
       filters: [
-        {
-          filter(self, nodes){
-            return nodes.filter(x => self.semiRequired ? x.semiRequired || x.present : !x.semiRequired)
-          },
-        },
-        {
-          filter(value, nodes){
-            return nodes.filter(x => x.present === value.present)
-          },
-        },
+        predicateFilter((self, other) => (
+          self.semiRequired
+            ? other.semiRequired || other.present
+            : !other.semiRequired
+        )),
+        propertyFilter("present"),
       ],
     }))
   }

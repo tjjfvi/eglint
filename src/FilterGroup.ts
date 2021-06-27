@@ -1,11 +1,13 @@
 
-// Covariant :/
+export type FilterFn<T> = <U extends T>(value: U, nodes: readonly U[], requireWeak: boolean) => readonly U[]
 export interface Filter<T> {
   /** Defaults to Infinity */
   priority?: number,
   /** Defaults to false */
   required?: "strong" | "weak" | false,
-  filter(value: T, nodes: readonly T[], requireWeak: boolean): readonly T[],
+  filter: FilterFn<T> | Filter<T>,
+  // Disallow arrays
+  slice?: never,
 }
 
 export type FilterGroupArgs<T> = Omit<Filter<T>, "filter"> & { mode: "and" | "or", filters: Filter<T>[] }
@@ -41,7 +43,7 @@ export class FilterGroup<T> implements Filter<T> {
     return filter
   }
 
-  filter(value: T, nodes: readonly T[], requireWeak: boolean){
+  _filter<U extends T>(value: U, nodes: readonly U[], requireWeak: boolean){
     const isRequired = (filter: Filter<T>) =>
       requireWeak ? filter.required : filter.required === "strong"
     if(this.mode === "and") {
@@ -50,7 +52,7 @@ export class FilterGroup<T> implements Filter<T> {
           break
         if(nodes.length === 1 && !isRequired(filter))
           continue
-        const filteredNodes = filter.filter(value, nodes, requireWeak)
+        const filteredNodes = applyFilter(filter, value, nodes, requireWeak)
         if(filteredNodes.length || isRequired(filter))
           nodes = filteredNodes
       }
@@ -58,7 +60,7 @@ export class FilterGroup<T> implements Filter<T> {
     }
     else {
       for(const filter of this.filters) {
-        const filteredNodes = filter.filter(value, nodes, requireWeak)
+        const filteredNodes = applyFilter(filter, value, nodes, requireWeak)
         if(filteredNodes.length || isRequired(filter))
           return filteredNodes
       }
@@ -66,4 +68,14 @@ export class FilterGroup<T> implements Filter<T> {
     }
   }
 
+  get filter(): FilterFn<T>{
+    return this._filter
+  }
+
+}
+
+export function applyFilter<T, U extends T>(filter: Filter<T>, value: U, nodes: readonly U[], requireWeak: boolean){
+  while(typeof filter.filter !== "function")
+    filter = filter.filter
+  return filter.filter(value, nodes, requireWeak)
 }
