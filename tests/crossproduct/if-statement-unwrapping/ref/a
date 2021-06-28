@@ -1,0 +1,10 @@
+if(1)
+  2
+else if(3) {
+  if(a)
+    b
+  if(c)
+    d
+}
+else
+  5

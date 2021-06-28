@@ -5,11 +5,13 @@ import { parseSyntaxList } from "./parseSyntaxList"
 import { parseStringLiteral } from "./parseStringLiteral"
 import { parseArrowFunction } from "./parseArrowFunction"
 import { parseCommaSyntaxList } from "./parseCommaSyntaxList"
-import { parseSemiSyntaxList } from "./parseSemiSyntaxList"
 import { parseArrowFunctionBody } from "./parseArrowFunctionBody"
 import { parseArrowFunctionSig } from "./parseArrowFunctionSig"
 import { emptyTrivia, finishTrivia, parseTrivia, parseTriviaBetween, spaceTrivia } from "./trivia"
 import { parseBinaryExpression } from "./parseBinaryExpression"
+import { parseElseStatement, parseIfStatement } from "./parseIfStatement"
+import { parseLoneStatement } from "./parseLoneStatement"
+import { parseSemiSyntaxList, getSemi, getSemilessChildren, getLastNonSemiChild } from "./parseSemiSyntaxList"
 
 export class SourceFileNode extends Node {
 
@@ -32,6 +34,8 @@ export class SourceFileNode extends Node {
   ): Node{
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
       return this.parseSyntaxList(tsNode as ts.SyntaxList)
+    if(tsNode.kind === ts.SyntaxKind.IfStatement)
+      return this.parseIfStatement(tsNode, tsChildren)
     if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
       return this.parseStringLiteral(tsNode)
     if(tsNode.kind === ts.SyntaxKind.ArrowFunction)
@@ -45,7 +49,7 @@ export class SourceFileNode extends Node {
       return new TsNodeNode.for[tsNode.kind](this.getText(tsNode))
   }
 
-  parseTsChildren(tsChildren: ts.Node[]){
+  parsePartialTsChildren(tsChildren: ts.Node[]){
     let children = []
     let lastPos = tsChildren[0].getStart(this.sourceFile)
 
@@ -56,7 +60,11 @@ export class SourceFileNode extends Node {
       children.push(this.parseTsNode(child))
     }
 
-    return this.finishTrivia(children)
+    return children
+  }
+
+  parseTsChildren(tsChildren: ts.Node[]){
+    return this.finishTrivia(this.parsePartialTsChildren(tsChildren))
   }
 
   getText(tsNode: ts.Node){
@@ -69,6 +77,9 @@ export class SourceFileNode extends Node {
   spaceTrivia = spaceTrivia
   finishTrivia = finishTrivia
 
+  parseIfStatement = parseIfStatement
+  parseElseStatement = parseElseStatement
+  parseLoneStatement = parseLoneStatement
   parseArrowFunction = parseArrowFunction
   parseArrowFunctionSig = parseArrowFunctionSig
   parseArrowFunctionBody = parseArrowFunctionBody
@@ -77,5 +88,9 @@ export class SourceFileNode extends Node {
   parseSemiSyntaxList = parseSemiSyntaxList
   parseStringLiteral = parseStringLiteral
   parseBinaryExpression = parseBinaryExpression
+
+  getSemi = getSemi
+  getSemilessChildren = getSemilessChildren
+  getLastNonSemiChild = getLastNonSemiChild
 
 }

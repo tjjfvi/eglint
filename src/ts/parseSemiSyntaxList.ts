@@ -11,23 +11,41 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
   const children = tsNode.getChildren()
   const nodes = []
   for(const [i, child] of children.entries()) {
-    const grandchildren = child.getChildren()
-    const hasSemicolon = grandchildren[grandchildren.length - 1]?.kind === ts.SyntaxKind.SemicolonToken
-    const semicolonTsNode = hasSemicolon ? grandchildren[grandchildren.length - 1] : undefined
-    const lastStatementChild = grandchildren[grandchildren.length - (hasSemicolon ? 2 : 1)] as ts.Node | undefined
+    const semicolonTsNode = this.getSemi(child)
+    const lastStatementChild = this.getLastNonSemiChild(child)
     const stmtNode = lastStatementChild
-      ? this.parseTsNode(child, hasSemicolon ? grandchildren.slice(0, -1) : grandchildren)
+      ? this.parseTsNode(child, this.getSemilessChildren(child))
       : new TsNodeNode.for.EmptyStatement("")
-    if(hasSemicolon)
+    if(semicolonTsNode)
       (stmtNode.children as Node[]).splice(stmtNode.children.length - 3, 2)
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.parseTriviaBetween(lastStatementChild, semicolonTsNode),
-      new SemiNode(hasSemicolon),
+      new SemiNode(!!semicolonTsNode),
       ...this.parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),
     ])))
   }
   return new SemiSyntaxListNode(nodes)
+}
+
+export function getSemi(this: SourceFileNode, tsNode: ts.Node){
+  const children = tsNode.getChildren()
+  const hasSemicolon = children[children.length - 1]?.kind === ts.SyntaxKind.SemicolonToken
+  const semicolonTsNode = hasSemicolon ? children[children.length - 1] : undefined
+  return semicolonTsNode
+}
+
+export function getSemilessChildren(this: SourceFileNode, tsNode: ts.Node){
+  const children = tsNode.getChildren()
+  if(this.getSemi(tsNode))
+    return children.slice(0, -1)
+  else
+    return children
+}
+
+export function getLastNonSemiChild(this: SourceFileNode, tsNode: ts.Node){
+  const semicolonlessChildren = this.getSemilessChildren(tsNode)
+  return semicolonlessChildren[semicolonlessChildren.length - 1]
 }
 
 export class SemiSyntaxListNode extends SyntaxListNode {
