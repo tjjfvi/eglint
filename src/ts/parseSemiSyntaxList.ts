@@ -1,6 +1,5 @@
 import ts from "typescript"
 import { InterchangeableNode } from "../InterchangeableNode"
-import { Node } from "../Node"
 import { propertyFilter } from "../propertyFilter"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
@@ -16,8 +15,6 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
     const stmtNode = lastStatementChild
       ? this.parseTsNode(child, this.getSemilessChildren(child))
       : new TsNodeNode.for.EmptyStatement("")
-    if(semicolonTsNode)
-      (stmtNode.children as Node[]).splice(stmtNode.children.length - 3, 2)
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.parseTriviaBetween(lastStatementChild, semicolonTsNode),

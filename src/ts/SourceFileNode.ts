@@ -44,7 +44,7 @@ export class SourceFileNode extends Node {
       return this.parseBinaryExpression(tsNode)
 
     if(tsChildren.length)
-      return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsNode.getChildren(this.sourceFile)))
+      return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsChildren))
     else
       return new TsNodeNode.for[tsNode.kind](this.getText(tsNode))
   }
