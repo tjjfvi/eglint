@@ -10,8 +10,10 @@ import { parseArrowFunctionSig } from "./parseArrowFunctionSig"
 import { emptyTrivia, finishTrivia, parseTrivia, parseTriviaBetween, spaceTrivia } from "./trivia"
 import { parseBinaryExpression } from "./parseBinaryExpression"
 import { parseElseStatement, parseIfStatement } from "./parseIfStatement"
-import { parseLoneStatement } from "./parseLoneStatement"
+import { parseStatement } from "./parseStatement"
 import { parseSemiSyntaxList, getSemi, getSemilessChildren, getLastNonSemiChild } from "./parseSemiSyntaxList"
+import { parseForLoop } from "./parseForLoop"
+import { parseStrippedStatement } from "./parseStrippedStatement"
 
 export class SourceFileNode extends Node {
 
@@ -27,21 +29,19 @@ export class SourceFileNode extends Node {
     this._applyChildren()
   }
 
-  parseTsNode(
-    tsNode: ts.Node,
-    // May have semicolon sliced off if tsNode is a statement
-    tsChildren = tsNode.getChildren(this.sourceFile),
-  ): Node{
+  parseTsNode(tsNode: ts.Node): Node{
+    if(isStatement(tsNode))
+      return this.parseStatement(tsNode)
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
       return this.parseSyntaxList(tsNode as ts.SyntaxList)
-    if(tsNode.kind === ts.SyntaxKind.IfStatement)
-      return this.parseIfStatement(tsNode, tsChildren)
     if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
       return this.parseStringLiteral(tsNode)
     if(tsNode.kind === ts.SyntaxKind.ArrowFunction)
       return this.parseArrowFunction(tsNode)
     if(tsNode.kind === ts.SyntaxKind.BinaryExpression)
       return this.parseBinaryExpression(tsNode)
+
+    const tsChildren = tsNode.getChildren()
 
     if(tsChildren.length)
       return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsChildren))
@@ -77,9 +77,6 @@ export class SourceFileNode extends Node {
   spaceTrivia = spaceTrivia
   finishTrivia = finishTrivia
 
-  parseIfStatement = parseIfStatement
-  parseElseStatement = parseElseStatement
-  parseLoneStatement = parseLoneStatement
   parseArrowFunction = parseArrowFunction
   parseArrowFunctionSig = parseArrowFunctionSig
   parseArrowFunctionBody = parseArrowFunctionBody
@@ -93,4 +90,12 @@ export class SourceFileNode extends Node {
   getSemilessChildren = getSemilessChildren
   getLastNonSemiChild = getLastNonSemiChild
 
+  parseStatement = parseStatement
+  parseStrippedStatement = parseStrippedStatement
+  parseForLoop = parseForLoop
+  parseIfStatement = parseIfStatement
+  parseElseStatement = parseElseStatement
+
 }
+
+const isStatement = (ts as any).isStatement as (node: ts.Node) => boolean

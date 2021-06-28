@@ -1,5 +1,5 @@
 import ts from "typescript"
-import { LoneStatementNode, SwappableBlockNode } from "./parseLoneStatement"
+import { LoneStatementNode, SwappableBlockNode } from "./parseStatement"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 import { printTsNode } from "./tsUtils"
@@ -32,7 +32,7 @@ export function parseIfStatement(
       return new IfStatement(this.finishTrivia([
         ...this.parsePartialTsChildren(tsChildren.slice(0, 4)),
         ...this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
-        this.parseLoneStatement(tsChildren[4]),
+        this.parseStatement(tsChildren[4]),
       ]))
     case 7: {
       // If an if-else statement looks like this, removing the braces on the if will
@@ -54,7 +54,7 @@ export function parseIfStatement(
         new IfStatement(this.finishTrivia([
           ...this.parsePartialTsChildren(tsChildren.slice(0, 4)),
           ...this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
-          this.parseLoneStatement(tsChildren[4], forceUnswappable),
+          this.parseStatement(tsChildren[4], forceUnswappable),
         ])),
         ...this.parseTriviaBetween(tsChildren[4], tsChildren[5]),
         this.parseElseStatement(tsChildren.slice(5)),
@@ -74,7 +74,7 @@ export function parseElseStatement(this: SourceFileNode, tsChildren: ts.Node[]){
     this.parseTsNode(tsChildren[0]),
     ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
   ]
-  const body = this.parseLoneStatement(tsChildren[1])
+  const body = this.parseStatement(tsChildren[1])
   const isElseIf = true
     && body instanceof SwappableBlockNode
     && body.allOptions.some(x => true

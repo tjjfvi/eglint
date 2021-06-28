@@ -7,7 +7,7 @@ import { SyntaxListEntryNode, SyntaxListSeparatorNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
-export function parseLoneStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswappable = false): Node{
+export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswappable = false): Node{
   const tsChildren = tsNode.getChildren(this.sourceFile)
   if(tsNode.kind === ts.SyntaxKind.Block) {
     const tsSyntaxList = tsChildren[1]
@@ -22,7 +22,7 @@ export function parseLoneStatement(this: SourceFileNode, tsNode: ts.Node, forceU
         ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
         new SemiSyntaxListNode([
           new SyntaxListEntryNode(
-            statement = this.parseTsNode(tsStatement, this.getSemilessChildren(tsStatement)),
+            statement = this.parseStrippedStatement(tsStatement, this.getSemilessChildren(tsStatement)),
           ),
           new SyntaxListSeparatorNode(semiChildren = this.finishTrivia([
             ...this.parseTriviaBetween(this.getLastNonSemiChild(tsStatement), this.getSemi(tsStatement)),
@@ -38,7 +38,7 @@ export function parseLoneStatement(this: SourceFileNode, tsNode: ts.Node, forceU
   }
   let statement, semiChildren
   const base = new LoneStatementNode([
-    statement = this.parseTsNode(tsNode, this.getSemilessChildren(tsNode)),
+    statement = this.parseStrippedStatement(tsNode, this.getSemilessChildren(tsNode)),
     ...semiChildren = this.finishTrivia([
       ...this.parseTriviaBetween(this.getLastNonSemiChild(tsNode), this.getSemi(tsNode)),
       new SemiNode(!!this.getSemi(tsNode)),

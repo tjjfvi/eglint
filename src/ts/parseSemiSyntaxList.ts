@@ -13,7 +13,7 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
     const semicolonTsNode = this.getSemi(child)
     const lastStatementChild = this.getLastNonSemiChild(child)
     const stmtNode = lastStatementChild
-      ? this.parseTsNode(child, this.getSemilessChildren(child))
+      ? this.parseStrippedStatement(child, this.getSemilessChildren(child))
       : new TsNodeNode.for.EmptyStatement("")
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
