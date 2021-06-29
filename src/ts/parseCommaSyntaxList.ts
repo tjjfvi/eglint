@@ -12,7 +12,7 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
       nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
         ...this.parseTriviaBetween(children[i - 1], child),
         i === children.length - 1
-          ? new TrailingCommaNode(true)
+          ? (this.getText(child), new TrailingCommaNode(true))
           : this.parseTsNode(child),
         ...this.parseTriviaBetween(child, children[i + 1]),
       ])))

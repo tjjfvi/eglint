@@ -11,16 +11,17 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
   // - [ "(", SyntaxList[ ... ], ")", ":", <ReturnType> ]
   switch(tsChildren.length) {
     case 1: {
-      const parameters = tsChildren[0].getChildren(this.sourceFile)
-      const parameter = parameters[0]
-      const parameterChildren = parameter.getChildren(this.sourceFile)
-      const identifier = parameterChildren[0]
+      const tsParameters = tsChildren[0].getChildren(this.sourceFile)
+      const tsParameter = tsParameters[0]
+      const tsParameterChildren = tsParameter.getChildren(this.sourceFile)
+      const identifier = tsParameterChildren[0]
+      const parsedSyntaxList = this.parseTsNode(tsChildren[0])
       return new SwappableArrowFunctionSigNode(
-        this.parseTsNode(identifier),
+        this.retrieveParsedTsNode(identifier),
         [new ArrowFunctionSigNode([
           new TsNodeNode.for.OpenParenToken("("),
           ...this.emptyTrivia(),
-          this.parseTsNode(tsChildren[0]),
+          parsedSyntaxList,
           ...this.emptyTrivia(),
           new TsNodeNode.for.OpenParenToken(")"),
           new IndentNode(0),
@@ -39,7 +40,7 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       const identifier = parameterChildren[0]
       return new SwappableArrowFunctionSigNode(
         new ArrowFunctionSigNode(this.parseTsChildren(tsChildren)),
-        [this.parseTsNode(identifier)],
+        [this.retrieveParsedTsNode(identifier)],
       )
     }
     case 5:

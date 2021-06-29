@@ -24,6 +24,8 @@ export function spaceTrivia(this: SourceFileNode){
 }
 
 export function parseTrivia(this: SourceFileNode, start: number, end: number){
+  if(this.pos !== start)
+    throw new Error(`Gap at positions ${this.pos}-${start}`)
   let text = this.source.slice(start, end)
   let whitespaceChildren: Node[] = []
   let nodes = []
@@ -59,6 +61,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
     else
       throw new Error("Encountered invalid trivia")
     text = text.slice(match[0].length)
+    this.pos += match[0].length
   }
   finishWhitespaceChildren()
   return nodes

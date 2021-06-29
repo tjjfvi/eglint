@@ -22,18 +22,11 @@ export function parsePropertyAssignment(this: SourceFileNode, tsNode: ts.Node){
       ])],
     )
   }
-  if(tsChildren[2].kind !== ts.SyntaxKind.Identifier || this.getText(tsChildren[2]) !== this.getText(tsChildren[0]))
+  if(tsChildren[2].kind !== ts.SyntaxKind.Identifier || this.peekText(tsChildren[2]) !== this.peekText(tsChildren[0]))
     return new PropertyAssignment(this.parseTsChildren(tsChildren))
-  const identifier = this.parseTsNode(tsChildren[0])
   return new SwappablePropertyAssignmentNode(
-    new PropertyAssignment(this.finishTrivia([
-      identifier,
-      ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
-      this.parseTsNode(tsChildren[1]),
-      ...this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
-      identifier,
-    ])),
-    [identifier],
+    new PropertyAssignment(this.parseTsChildren(tsChildren)),
+    [this.retrieveParsedTsNode(tsChildren[0])],
   )
 }
 

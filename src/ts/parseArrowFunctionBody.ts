@@ -7,45 +7,60 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 import { SingletonNode } from "../SingletonNode"
 
+const { Block, OpenBraceToken, CloseBraceToken, ReturnStatement, ReturnKeyword } = TsNodeNode.for
+
 export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node){
-  const bodyNode = this.parseTsNode(bodyTsNode)
-  const isBlock = bodyNode instanceof TsNodeNode.for.Block
-  const swappable = !isBlock || (
-    bodyNode.children[2].children.length === 2
-    && bodyNode.children[2].children[0].children[0] instanceof TsNodeNode.for.ReturnStatement
-  )
-  if(!swappable)
-    return bodyNode
-  const resultNode = isBlock
-    ? bodyNode.children[2].children[0].children[0].children[2]
-    : bodyNode
-  const alternative = isBlock
-    ? new ArrowFunctionExpressionBody(resultNode)
-    : new TsNodeNode.for.Block([
-      new TsNodeNode.for.OpenBraceToken("{"),
-      ...this.spaceTrivia(),
-      new SyntaxListNode([
-        new SyntaxListEntryNode(new TsNodeNode.for.ReturnStatement([
-          new TsNodeNode.for.ReturnKeyword("return"),
-          ...this.spaceTrivia(),
-          resultNode,
-          new IndentNode(0),
-        ])),
-        new SyntaxListSeparatorNode([
-          ...this.emptyTrivia(),
-          new SemiNode(false),
-          ...this.emptyTrivia(),
-          new IndentNode(0),
+  if(bodyTsNode.kind !== ts.SyntaxKind.Block) {
+    // bodyTsNode is an expression
+    let expression
+    return new SwappableArrowFunctionBody(
+      new ArrowFunctionExpressionBody(expression = this.parseTsNode(bodyTsNode)),
+      [new Block([
+        new OpenBraceToken("{"),
+        ...this.spaceTrivia(),
+        new SyntaxListNode([
+          new SyntaxListEntryNode(new ReturnStatement([
+            new ReturnKeyword("return"),
+            ...this.spaceTrivia(),
+            expression,
+            new IndentNode(0),
+          ])),
+          new SyntaxListSeparatorNode([
+            ...this.emptyTrivia(),
+            new SemiNode(false),
+            ...this.emptyTrivia(),
+            new IndentNode(0),
+          ]),
         ]),
-      ]),
-      ...this.spaceTrivia(),
-      new TsNodeNode.for.OpenBraceToken("}"),
-      new IndentNode(0),
-    ])
-  if(isBlock)
-    return new SwappableArrowFunctionBody(bodyNode, [alternative])
-  else
-    return new SwappableArrowFunctionBody(new ArrowFunctionExpressionBody(bodyNode), [alternative])
+        ...this.spaceTrivia(),
+        new CloseBraceToken("}"),
+        new IndentNode(0),
+      ])],
+    )
+  }
+
+  const tsSyntaxList = bodyTsNode.getChildren()[1]
+  const tsStatements = tsSyntaxList.getChildren()
+  if(tsStatements.length !== 1 || tsStatements[0].kind !== ts.SyntaxKind.ReturnStatement)
+    return this.parseTsNode(bodyTsNode)
+  // bodyTsNode is
+  // Block [
+  //   "{",
+  //   SyntaxList [
+  //     ReturnStatement [
+  //       "return",
+  //       <Expression>,
+  //       ";"?,
+  //     ]
+  //   ]
+  //   "}",
+  // ]
+  const tsReturnStatement = tsStatements[0]
+  const tsExpression = tsReturnStatement.getChildren()[1]
+  return new SwappableArrowFunctionBody(
+    this.parseTsNode(bodyTsNode),
+    [new ArrowFunctionExpressionBody(this.retrieveParsedTsNode(tsExpression))],
+  )
 }
 
 export class SwappableArrowFunctionBody extends ForkNode {}

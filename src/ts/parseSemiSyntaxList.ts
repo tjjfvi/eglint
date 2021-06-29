@@ -18,11 +18,18 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
     nodes.push(new SyntaxListEntryNode(stmtNode))
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.parseTriviaBetween(lastStatementChild, semicolonTsNode),
-      new SemiNode(!!semicolonTsNode),
+      this.parseSemi(semicolonTsNode),
       ...this.parseTriviaBetween(semicolonTsNode ?? lastStatementChild, children[i + 1]),
     ])))
   }
   return new SemiSyntaxListNode(nodes)
+}
+
+export function parseSemi(this: SourceFileNode, node: ts.Node | undefined){
+  if(!node)
+    return new SemiNode(false)
+  this.getText(node) // Advance position
+  return new SemiNode(true)
 }
 
 export function getSemi(this: SourceFileNode, tsNode: ts.Node){

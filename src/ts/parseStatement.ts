@@ -2,7 +2,7 @@ import ts from "typescript"
 import { ForkNode } from "../ForkNode"
 import { IndentNode } from "../IndentNode"
 import { Node } from "../Node"
-import { SemiNode, SemiSyntaxListNode } from "./parseSemiSyntaxList"
+import { SemiSyntaxListNode } from "./parseSemiSyntaxList"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
@@ -26,7 +26,7 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
           ),
           new SyntaxListSeparatorNode(semiChildren = this.finishTrivia([
             ...this.parseTriviaBetween(this.getLastNonSemiChild(tsStatement), this.getSemi(tsStatement)),
-            new SemiNode(!!this.getSemi(tsStatement)),
+            this.parseSemi(this.getSemi(tsStatement)),
             ...this.emptyTrivia(),
           ])),
         ]),
@@ -41,7 +41,7 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
     statement = this.parseStrippedStatement(tsNode, this.getSemilessChildren(tsNode)),
     ...semiChildren = this.finishTrivia([
       ...this.parseTriviaBetween(this.getLastNonSemiChild(tsNode), this.getSemi(tsNode)),
-      new SemiNode(!!this.getSemi(tsNode)),
+      this.parseSemi(this.getSemi(tsNode)),
       ...this.emptyTrivia(),
     ]),
   ])

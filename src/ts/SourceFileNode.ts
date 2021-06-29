@@ -11,15 +11,22 @@ import { emptyTrivia, finishTrivia, parseTrivia, parseTriviaBetween, spaceTrivia
 import { parseBinaryExpression } from "./parseBinaryExpression"
 import { parseElseStatement, parseIfStatement } from "./parseIfStatement"
 import { parseStatement } from "./parseStatement"
-import { parseSemiSyntaxList, getSemi, getSemilessChildren, getLastNonSemiChild } from "./parseSemiSyntaxList"
 import { parseForLoop } from "./parseForLoop"
 import { parseStrippedStatement } from "./parseStrippedStatement"
 import { parsePropertyAssignment } from "./parsePropertyAssignment"
+import {
+  parseSemiSyntaxList,
+  getSemi,
+  getSemilessChildren,
+  getLastNonSemiChild,
+  parseSemi,
+} from "./parseSemiSyntaxList"
 
 export class SourceFileNode extends Node {
 
   source = this.sourceFile.getFullText()
   indentLevel = 0
+  pos = 0
 
   constructor(public sourceFile: ts.SourceFile){
     super([])
@@ -30,7 +37,23 @@ export class SourceFileNode extends Node {
     this._applyChildren()
   }
 
+  tsNodeNodeMemo = new Map<ts.Node, Node>()
   parseTsNode(tsNode: ts.Node): Node{
+    if(this.tsNodeNodeMemo.has(tsNode))
+      throw new Error("Double parsing of tsNode")
+    const result = this._parseTsNode(tsNode)
+    this.tsNodeNodeMemo.set(tsNode, result)
+    return result
+  }
+
+  retrieveParsedTsNode(tsNode: ts.Node): Node{
+    const result = this.tsNodeNodeMemo.get(tsNode)
+    if(!result)
+      throw new Error("tsNode not yet parsed")
+    return result
+  }
+
+  _parseTsNode(tsNode: ts.Node): Node{
     if(isStatement(tsNode))
       return this.parseStatement(tsNode)
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
@@ -70,8 +93,16 @@ export class SourceFileNode extends Node {
     return this.finishTrivia(this.parsePartialTsChildren(tsChildren))
   }
 
-  getText(tsNode: ts.Node){
+  peekText(tsNode: ts.Node){
     return this.source.slice(tsNode.getStart(this.sourceFile), tsNode.end)
+  }
+
+  getText(tsNode: ts.Node){
+    const start = tsNode.getStart(this.sourceFile)
+    if(this.pos !== start)
+      throw new Error(`Gap at positions ${this.pos}-${start}`)
+    this.pos = tsNode.end
+    return this.peekText(tsNode)
   }
 
   parseTrivia = parseTrivia
@@ -90,6 +121,7 @@ export class SourceFileNode extends Node {
   parseBinaryExpression = parseBinaryExpression
   parsePropertyAssignment = parsePropertyAssignment
 
+  parseSemi = parseSemi
   getSemi = getSemi
   getSemilessChildren = getSemilessChildren
   getLastNonSemiChild = getLastNonSemiChild
