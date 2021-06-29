@@ -4,7 +4,7 @@ import { propertyFilter } from "../propertyFilter"
 import { SyntaxListSeparatorNode, SyntaxListEntryNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 
-export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
+export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList, parseChild = this.parseTsNode){
   const children = tsNode.getChildren()
   const nodes = []
   for(const [i, child] of children.entries())
@@ -17,7 +17,7 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList){
         ...this.parseTriviaBetween(child, children[i + 1]),
       ])))
     else
-      nodes.push(new SyntaxListEntryNode(this.parseTsNode(child)))
+      nodes.push(new SyntaxListEntryNode(parseChild.call(this, child)))
   if(children.length && children[children.length - 1].kind !== ts.SyntaxKind.CommaToken)
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
       ...this.emptyTrivia(),

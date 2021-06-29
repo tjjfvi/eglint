@@ -9,7 +9,9 @@ export function parseBinaryExpression(this: SourceFileNode, tsNode: ts.Node){
     throw new Error("Invalid BinaryExpression")
   const [a, op, b] = children
   return new TsNodeNode.for.BinaryExpression(this.finishTrivia([
-    this.parseTsNode(a),
+    op.kind >= ts.SyntaxKind.FirstAssignment && op.kind <= ts.SyntaxKind.LastAssignment
+      ? this.parseBindingPattern(a)
+      : this.parseTsNode(a),
     ...this.parseTriviaBetween(a, op),
     new OperatorNode(this.parseTsNode(op)),
     ...this.parseTriviaBetween(op, b),

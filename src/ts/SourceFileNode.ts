@@ -14,6 +14,8 @@ import { parseStatement } from "./parseStatement"
 import { parseForLoop } from "./parseForLoop"
 import { parseStrippedStatement } from "./parseStrippedStatement"
 import { parsePropertyAssignment } from "./parsePropertyAssignment"
+import { parseBindingPattern } from "./parseBindingPattern"
+import { parseObjectBindingElement } from "./parseObjectBindingElement"
 import {
   parseSemiSyntaxList,
   getSemi,
@@ -21,6 +23,7 @@ import {
   getLastNonSemiChild,
   parseSemi,
 } from "./parseSemiSyntaxList"
+import { parseArrayBindingElement } from "./parseArrayBindingElement"
 
 export class SourceFileNode extends Node {
 
@@ -66,6 +69,8 @@ export class SourceFileNode extends Node {
       return this.parseBinaryExpression(tsNode)
     if(tsNode.kind === ts.SyntaxKind.PropertyAssignment || tsNode.kind === ts.SyntaxKind.ShorthandPropertyAssignment)
       return this.parsePropertyAssignment(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.ObjectBindingPattern || tsNode.kind === ts.SyntaxKind.ArrayBindingPattern)
+      return this.parseBindingPattern(tsNode)
 
     const tsChildren = tsNode.getChildren()
 
@@ -120,6 +125,10 @@ export class SourceFileNode extends Node {
   parseStringLiteral = parseStringLiteral
   parseBinaryExpression = parseBinaryExpression
   parsePropertyAssignment = parsePropertyAssignment
+
+  parseBindingPattern = parseBindingPattern
+  parseObjectBindingElement = parseObjectBindingElement
+  parseArrayBindingElement = parseArrayBindingElement
 
   parseSemi = parseSemi
   getSemi = getSemi
