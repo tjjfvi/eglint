@@ -51,7 +51,7 @@ export abstract class Node {
 
   protected _applyChildren(){
     this.children = this.children.map((child, i) => {
-      if(child.parent && child.parent !== this)
+      if(child.parent && (child.parent !== this || child.index !== i))
         child = child.cloneDeep()
       child.parent = this
       child.index = i

@@ -14,6 +14,7 @@ import { parseStatement } from "./parseStatement"
 import { parseSemiSyntaxList, getSemi, getSemilessChildren, getLastNonSemiChild } from "./parseSemiSyntaxList"
 import { parseForLoop } from "./parseForLoop"
 import { parseStrippedStatement } from "./parseStrippedStatement"
+import { parsePropertyAssignment } from "./parsePropertyAssignment"
 
 export class SourceFileNode extends Node {
 
@@ -40,6 +41,8 @@ export class SourceFileNode extends Node {
       return this.parseArrowFunction(tsNode)
     if(tsNode.kind === ts.SyntaxKind.BinaryExpression)
       return this.parseBinaryExpression(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.PropertyAssignment || tsNode.kind === ts.SyntaxKind.ShorthandPropertyAssignment)
+      return this.parsePropertyAssignment(tsNode)
 
     const tsChildren = tsNode.getChildren()
 
@@ -85,6 +88,7 @@ export class SourceFileNode extends Node {
   parseSemiSyntaxList = parseSemiSyntaxList
   parseStringLiteral = parseStringLiteral
   parseBinaryExpression = parseBinaryExpression
+  parsePropertyAssignment = parsePropertyAssignment
 
   getSemi = getSemi
   getSemilessChildren = getSemilessChildren
