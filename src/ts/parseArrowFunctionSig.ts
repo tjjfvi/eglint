@@ -18,14 +18,14 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       const parsedSyntaxList = this.parseTsNode(tsChildren[0])
       return new SwappableArrowFunctionSigNode(
         this.retrieveParsedTsNode(identifier),
-        [new ArrowFunctionSigNode([
+        new ArrowFunctionSigNode([
           new TsNodeNode.for.OpenParenToken("("),
           ...this.emptyTrivia(),
           parsedSyntaxList,
           ...this.emptyTrivia(),
           new TsNodeNode.for.OpenParenToken(")"),
           new IndentNode(0),
-        ])],
+        ]),
       )
     }
     case 3: {
@@ -40,7 +40,7 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       const identifier = parameterChildren[0]
       return new SwappableArrowFunctionSigNode(
         new ArrowFunctionSigNode(this.parseTsChildren(tsChildren)),
-        [this.retrieveParsedTsNode(identifier)],
+        this.retrieveParsedTsNode(identifier),
       )
     }
     case 5:

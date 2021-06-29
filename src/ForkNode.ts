@@ -3,10 +3,13 @@ import { SingletonNode } from "./SingletonNode"
 
 export abstract class ForkNode extends SingletonNode {
 
-  allOptions: readonly Node[] = [this.children[0], ...this.alternatives]
+  alternatives: readonly Node[]
+  allOptions: readonly Node[]
 
-  constructor(current: Node, public alternatives: readonly Node[]){
+  constructor(current: Node, ...alternatives: readonly Node[]){
     super(current)
+    this.alternatives = alternatives
+    this.allOptions = [this.children[0], ...this.alternatives]
   }
 
   override get filterByChildren(){

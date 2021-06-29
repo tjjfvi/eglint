@@ -33,7 +33,7 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
         ...this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
         this.parseTsNode(tsChildren[2]),
       ])),
-      [new LoneStatementNode([statement, ...semiChildren])],
+      new LoneStatementNode([statement, ...semiChildren]),
     )
   }
   let statement, semiChildren
@@ -49,7 +49,7 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
     return base
   return new SwappableBlockNode(
     base,
-    [new LoneBlockNode([
+    new LoneBlockNode([
       new TsNodeNode.for.OpenBraceToken("{"),
       ...this.emptyTrivia(),
       new SemiSyntaxListNode([
@@ -59,7 +59,7 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
       ...this.emptyTrivia(),
       new TsNodeNode.for.CloseBraceToken("}"),
       new IndentNode(0),
-    ])],
+    ]),
   )
 }
 

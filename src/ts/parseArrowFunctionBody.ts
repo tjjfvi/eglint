@@ -15,7 +15,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
     let expression
     return new SwappableArrowFunctionBody(
       new ArrowFunctionExpressionBody(expression = this.parseTsNode(bodyTsNode)),
-      [new Block([
+      new Block([
         new OpenBraceToken("{"),
         ...this.spaceTrivia(),
         new SyntaxListNode([
@@ -35,7 +35,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
         ...this.spaceTrivia(),
         new CloseBraceToken("}"),
         new IndentNode(0),
-      ])],
+      ]),
     )
   }
 
@@ -59,7 +59,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
   const tsExpression = tsReturnStatement.getChildren()[1]
   return new SwappableArrowFunctionBody(
     this.parseTsNode(bodyTsNode),
-    [new ArrowFunctionExpressionBody(this.retrieveParsedTsNode(tsExpression))],
+    new ArrowFunctionExpressionBody(this.retrieveParsedTsNode(tsExpression)),
   )
 }
 

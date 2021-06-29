@@ -12,21 +12,21 @@ export function parsePropertyAssignment(this: SourceFileNode, tsNode: ts.Node){
     const identifier = this.parseTsNode(tsChildren[0])
     return new SwappablePropertyAssignmentNode(
       identifier,
-      [new PropertyAssignment([
+      new PropertyAssignment([
         identifier,
         ...this.emptyTrivia(),
         new ColonToken(":"),
         ...this.emptyTrivia(),
         identifier,
         new IndentNode(0),
-      ])],
+      ]),
     )
   }
   if(tsChildren[2].kind !== ts.SyntaxKind.Identifier || this.peekText(tsChildren[2]) !== this.peekText(tsChildren[0]))
     return new PropertyAssignment(this.parseTsChildren(tsChildren))
   return new SwappablePropertyAssignmentNode(
     new PropertyAssignment(this.parseTsChildren(tsChildren)),
-    [this.retrieveParsedTsNode(tsChildren[0])],
+    this.retrieveParsedTsNode(tsChildren[0]),
   )
 }
 
