@@ -31,7 +31,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
   let nodes = []
   let deltaIndentAcc = 0
   const calculateDeltaIndent = (indent: string) => {
-    const deltaIndent = Math.floor(indent.length / 2) - this.indentLevel
+    const deltaIndent = Math.floor(indent.length / this.indent.length) - this.indentLevel
     this.indentLevel += deltaIndent
     deltaIndentAcc += deltaIndent
     return deltaIndent
@@ -50,7 +50,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
       )))
       whitespaceChildren.push(new NewlineNode(deltaIndent))
     }
-    else if((match = /^\n( *)/.exec(text)))
+    else if((match = /^\n([ \t]*)/.exec(text)))
       whitespaceChildren.push(new NewlineNode(calculateDeltaIndent(match[1])))
     else if((match = /^ +/.exec(text)))
       whitespaceChildren.push(new SpaceNode(match[0].length))

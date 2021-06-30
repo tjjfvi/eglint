@@ -18,13 +18,14 @@ export class IndentNode extends InterchangeableNode {
 export class IndentationContext extends Context {
 
   level = 0
+  indent = "  "
 
   override toString(){
     if(this.level < 0) {
       console.warn("Invalid indent level " + this.level)
       return ""
     }
-    return "  ".repeat(this.level)
+    return this.indent.repeat(this.level)
   }
 
 }

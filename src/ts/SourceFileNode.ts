@@ -27,10 +27,13 @@ import { parseArrayBindingElement } from "./parseArrayBindingElement"
 import { parseModifiers } from "./parseModifiers"
 import { parseClassLike } from "./parseClassLike"
 import { parseUnionIntersectionType } from "./parseUnionIntersectionType"
+import { ContextProvider } from "../Context"
+import { IndentationContext } from "../IndentNode"
 
 export class SourceFileNode extends Node {
 
   source = this.sourceFile.getFullText()
+  indent = this.source.match(/^[ \t]+/m)?.[0] ?? "  "
   indentLevel = 0
   pos = 0
 
@@ -41,6 +44,22 @@ export class SourceFileNode extends Node {
       ...this.parseTsChildren(sourceFile.getChildren(sourceFile)),
     ]
     this._applyChildren()
+  }
+
+  override toString(contextProvider = new ContextProvider()){
+    const indentation = contextProvider.getContext(IndentationContext)
+    indentation.indent = this.indent
+    return super.toString(contextProvider)
+  }
+
+  override _adaptTo(
+    selectedReferenceNode: this,
+    selectedReferenceNodes: readonly this[],
+    allReferenceNodes: readonly Node[],
+  ){
+    const adapted = super._adaptTo(selectedReferenceNode, selectedReferenceNodes, allReferenceNodes) as SourceFileNode
+    adapted.indent = selectedReferenceNode.indent
+    return adapted
   }
 
   tsNodeNodeMemo = new Map<ts.Node, Node>()
