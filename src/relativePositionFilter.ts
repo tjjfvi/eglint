@@ -14,7 +14,7 @@ const siblingExistenceMatches = (offset: 1 | -1) =>
 const compareSiblingsLock = new Set<Node>()
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 const compareSiblings = (offset: 1 | -1) =>
-  <T extends Node>(value: Node, nodes: readonly T[], requireWeak: boolean): readonly T[] => {
+  <T extends Node>(value: Node, nodes: readonly T[]): readonly T[] => {
     if(compareSiblingsLock.has(value))
       return nodes
     compareSiblingsLock.add(value)
@@ -22,7 +22,7 @@ const compareSiblings = (offset: 1 | -1) =>
     if(!sibling) return nodes
     nodes = nodes.filter(x => getSibling(x, offset) instanceof sibling.compareClass)
     const result = sibling
-      .filter(nodes.map(x => getSibling(x, offset)!), requireWeak)
+      .select(nodes.map(x => getSibling(x, offset)!), [])
       .map(x => getSibling(x, -offset) as T)
     compareSiblingsLock.delete(value)
     return result
