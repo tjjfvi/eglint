@@ -141,7 +141,7 @@ export abstract class Node {
 
   protected clone(): this{
     const clone: this = Object.create(Object.getPrototypeOf(this))
-    Object.assign(clone, this)
+    Object.defineProperties(clone, Object.getOwnPropertyDescriptors(this))
     clone.id = idN++
     clone.parent = null
     clone.index = -1
@@ -149,9 +149,8 @@ export abstract class Node {
   }
 
   cloneDeep(): this{
-    const clone: this = Object.create(Object.getPrototypeOf(this))
+    const clone: this = this.clone()
     Object.assign(clone, this)
-    clone.children = clone.children.map(c => c.cloneDeep())
     clone._applyChildren()
     return clone
   }
