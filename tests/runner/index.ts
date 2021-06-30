@@ -1,9 +1,10 @@
 
 import chalk from "chalk"
-import type { default as _runCrossProductTests, TestStatus } from "./crossproduct"
+import type { default as _runAll } from "./runAll"
 import yargs from "yargs"
 import watchDir from "node-watch"
 import path from "path"
+import { TestStatus } from "./types"
 
 const { join, relative } = path.posix
 
@@ -26,16 +27,16 @@ const baseRequireCache = new Set(Object.keys(require.cache))
     for(const key in require.cache)
       if(!baseRequireCache.has(key))
         delete require.cache[key]
-    let runCrossProductTests
+    let runAll
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      runCrossProductTests = require("./crossproduct").default as typeof _runCrossProductTests
+      runAll = require("./runAll").default as typeof _runAll
     }
     catch (e) {
       console.error(e)
       return null
     }
-    const results = await runCrossProductTests(options.update, options._.map(x => x.toString()))
+    const results = await runAll(options.update, options._.map(x => x.toString()))
 
     const colors: Record<TestStatus, chalk.ChalkFunction> = {
       passed: chalk.green,

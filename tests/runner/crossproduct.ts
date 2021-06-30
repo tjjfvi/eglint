@@ -5,15 +5,13 @@ import ts from "typescript"
 import { cacheFn, Node, SourceFileNode } from "../../src"
 import chalk from "chalk"
 import { createRichDiff } from "./diff"
+import { TestResult } from "./types"
 
 const testPath = (relativePath = "") =>
   joinPath(__dirname, "../crossproduct", relativePath)
 
 const file = (relativePath: string) =>
   fs.readFile(testPath(relativePath), "utf8")
-
-export type TestStatus = "passed" | "updated" | "skipped" | "errored" | "failed" | "missing"
-export type TestResult = { status: TestStatus }
 
 export default async (update: boolean, filterRaw: string[]) => {
   const filter = filterRaw.map(s => (
