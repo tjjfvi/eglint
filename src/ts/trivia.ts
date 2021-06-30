@@ -48,10 +48,10 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
         innerText,
         deltaIndent,
       )))
-      whitespaceChildren.push(new NewlineNode(deltaIndent))
+      whitespaceChildren.push(new NewlineNode(1, deltaIndent))
     }
-    else if((match = /^\n([ \t]*)/.exec(text)))
-      whitespaceChildren.push(new NewlineNode(calculateDeltaIndent(match[1])))
+    else if((match = /^(?:\n([ \t]*))+/.exec(text)))
+      whitespaceChildren.push(new NewlineNode(match[0].match(/\n/g)?.length ?? 0, calculateDeltaIndent(match[1])))
     else if((match = /^ +/.exec(text)))
       whitespaceChildren.push(new SpaceNode(match[0].length))
     else if((match = /^\/\*[^]*\*\//.exec(text))) {
@@ -134,15 +134,15 @@ export class WhitespaceNode extends InterchangeableNode {
 
 }
 
-export class EndlineComment extends NewlineNode {
+export class EndlineComment extends Node {
 
   constructor(
     public spaceBeforeSlashes: boolean,
     public spaceAfterSlashes: boolean,
     public innerText: string,
-    deltaIndent: number,
+    public deltaIndent: number,
   ){
-    super(deltaIndent)
+    super()
   }
 
   override toString(contextProvider = new ContextProvider()){

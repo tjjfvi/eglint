@@ -22,7 +22,7 @@ export class IndentationContext extends Context {
 
   override toString(){
     if(this.level < 0) {
-      console.warn("Invalid indent level " + this.level)
+      throw new Error("Invalid indent level " + this.level)
       return ""
     }
     return this.indent.repeat(this.level)
