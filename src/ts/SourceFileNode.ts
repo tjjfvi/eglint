@@ -24,6 +24,9 @@ import {
   parseSemi,
 } from "./parseSemiSyntaxList"
 import { parseArrayBindingElement } from "./parseArrayBindingElement"
+import { parseModifiers } from "./parseModifiers"
+import { parseClassLike } from "./parseClassLike"
+import { parseUnionIntersectionType } from "./parseUnionIntersectionType"
 
 export class SourceFileNode extends Node {
 
@@ -71,6 +74,10 @@ export class SourceFileNode extends Node {
       return this.parsePropertyAssignment(tsNode)
     if(tsNode.kind === ts.SyntaxKind.ObjectBindingPattern || tsNode.kind === ts.SyntaxKind.ArrayBindingPattern)
       return this.parseBindingPattern(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.ClassExpression)
+      return this.parseClassLike(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.UnionType || tsNode.kind === ts.SyntaxKind.IntersectionType)
+      return this.parseUnionIntersectionType(tsNode)
 
     const tsChildren = tsNode.getChildren()
 
@@ -125,6 +132,9 @@ export class SourceFileNode extends Node {
   parseStringLiteral = parseStringLiteral
   parseBinaryExpression = parseBinaryExpression
   parsePropertyAssignment = parsePropertyAssignment
+  parseModifiers = parseModifiers
+  parseClassLike = parseClassLike
+  parseUnionIntersectionType = parseUnionIntersectionType
 
   parseBindingPattern = parseBindingPattern
   parseObjectBindingElement = parseObjectBindingElement
