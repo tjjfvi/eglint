@@ -3,11 +3,8 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
 export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
-  // An ArrowFunction node can be one of:
-  // - ArrowFunction [ "(", SyntaxList[ ... ], ")", "=>", <Body> ]
-  // - ArrowFunction [ "(", SyntaxList[ ... ], ")", ":", <ReturnType>, "=>", <Body> ]
-  // - ArrowFunction [ SyntaxList [ Parameter [ Identifier ] ], "=>", <Body> ]
-  // The last two nodes are always [ "=>", <Body> ], and the other nodes are always the signature
+  // An ArrowFunction node can be one of many different shapes, but
+  // the last two nodes are always [ "=>", <Body> ], and the other nodes are always the signature
   const tsChildren = tsNode.getChildren(this.sourceFile)
   const l = tsChildren.length
   return new TsNodeNode.for.ArrowFunction(this.finishTrivia([

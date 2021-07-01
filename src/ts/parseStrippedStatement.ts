@@ -10,15 +10,8 @@ export function parseStrippedStatement(this: SourceFileNode, tsNode: ts.Node, ts
     return this.parseForLoop(tsNode, tsChildren)
   if(tsNode.kind === ts.SyntaxKind.ClassDeclaration || tsNode.kind === ts.SyntaxKind.InterfaceDeclaration)
     return this.parseClassLike(tsNode)
+  if(tsNode.kind === ts.SyntaxKind.FunctionDeclaration)
+    return this.parseFunction(tsChildren)
 
-  if(tsChildren[0].kind === ts.SyntaxKind.SyntaxList)
-    return new TsNodeNode.for[tsNode.kind]([
-      this.parseModifiers(tsChildren[0].getChildren(), tsChildren[1]),
-      ...this.parseTsChildren(tsChildren.slice(1)),
-    ])
-
-  return new TsNodeNode.for[tsNode.kind]([
-    this.parseModifiers([], tsChildren[0]),
-    ...this.parseTsChildren(tsChildren),
-  ])
+  return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsChildren))
 }

@@ -24,11 +24,15 @@ import {
   parseSemi,
 } from "./parseSemiSyntaxList"
 import { parseArrayBindingElement } from "./parseArrayBindingElement"
-import { parseModifiers } from "./parseModifiers"
+import { parseModifiers, parseChildrenWithModifiers } from "./parseModifiers"
 import { parseClassLike } from "./parseClassLike"
 import { parseUnionIntersectionType } from "./parseUnionIntersectionType"
 import { ContextProvider } from "../Context"
 import { IndentationContext } from "../IndentNode"
+import { parseTemplateString } from "./parseTemplateString"
+import { parseTypeParameters } from "./parseTypeParameters"
+import { parseParameterList } from "./parseParameterList"
+import { parseFunction } from "./parseFunction"
 
 export class SourceFileNode extends Node {
 
@@ -97,6 +101,12 @@ export class SourceFileNode extends Node {
       return this.parseClassLike(tsNode)
     if(tsNode.kind === ts.SyntaxKind.UnionType || tsNode.kind === ts.SyntaxKind.IntersectionType)
       return this.parseUnionIntersectionType(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.TemplateExpression)
+      return this.parseTemplateString(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.Parameter)
+      return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsNode.getChildren()))
+    if(tsNode.kind === ts.SyntaxKind.FunctionExpression)
+      return this.parseFunction(tsNode.getChildren())
 
     const tsChildren = tsNode.getChildren()
 
@@ -152,8 +162,13 @@ export class SourceFileNode extends Node {
   parseBinaryExpression = parseBinaryExpression
   parsePropertyAssignment = parsePropertyAssignment
   parseModifiers = parseModifiers
+  parseChildrenWithModifiers = parseChildrenWithModifiers
   parseClassLike = parseClassLike
   parseUnionIntersectionType = parseUnionIntersectionType
+  parseTemplateString = parseTemplateString
+  parseTypeParameters = parseTypeParameters
+  parseParameterList = parseParameterList
+  parseFunction = parseFunction
 
   parseBindingPattern = parseBindingPattern
   parseObjectBindingElement = parseObjectBindingElement
