@@ -1,34 +1,35 @@
-import { Filter, FilterGroup } from "./FilterGroup"
+import { Filter, FilterFn } from "./Filter"
+import { FilterGroup } from "./FilterGroup"
 import { Node } from "./Node"
 
 function getSibling(node: Node, offset: number): Node | undefined{
   return node.parent?.children[node.index + offset]
 }
 
-const siblingExistenceMatches = (offset: 1 | -1) =>
-  <T extends Node>(value: Node, nodes: readonly T[]): readonly T[] => {
-    const sibling = getSibling(value, offset)
-    return nodes.filter(x => !!getSibling(x, offset) === !!sibling)
+const siblingExistenceMatches = (offset: 1 | -1): FilterFn<Node, Node> =>
+  (self, selection) => {
+    const sibling = getSibling(self, offset)
+    return selection.applyPredicate(x => !!getSibling(x, offset) === !!sibling)
   }
 
 const compareSiblingsLock = new Set<Node>()
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-const compareSiblings = (offset: 1 | -1) =>
-  <T extends Node>(value: Node, nodes: readonly T[]): readonly T[] => {
-    if(compareSiblingsLock.has(value))
-      return nodes
-    compareSiblingsLock.add(value)
-    const sibling = getSibling(value, offset)
-    if(!sibling) return nodes
-    nodes = nodes.filter(x => getSibling(x, offset) instanceof sibling.compareClass)
-    const result = sibling
-      .select(nodes.map(x => getSibling(x, offset)!), [])
-      .map(x => getSibling(x, -offset) as T)
-    compareSiblingsLock.delete(value)
-    return result
+const compareSiblings = (offset: 1 | -1): FilterFn<Node, Node> =>
+  (self, selection) => {
+    if(compareSiblingsLock.has(self))
+      return selection
+    try {
+      compareSiblingsLock.add(self)
+      const sibling = getSibling(self, offset)
+      if(!sibling) return selection
+      return sibling.filter(selection.map(x => [getSibling(x, offset)!]), true).apply()
+    }
+    finally {
+      compareSiblingsLock.delete(self)
+    }
   }
 
-export const relativePositionFilter: Filter<Node> = new FilterGroup({
+export const relativePositionFilter: Filter<Node, Node> = new FilterGroup({
   mode: "and",
   required: "weak",
   filters: [

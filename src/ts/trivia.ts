@@ -9,6 +9,8 @@ import { InterchangeableNode } from "../InterchangeableNode"
 import { relativePositionFilter } from "../relativePositionFilter"
 import { ContextProvider } from "../Context"
 import { propertyFilter } from "../propertyFilter"
+import { Reference } from "../Reference"
+import { Selection } from "../Selection"
 
 export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Node){
   if(!a || !b) return this.emptyTrivia()
@@ -161,7 +163,8 @@ export class EndlineComment extends Node {
     return text
   }
 
-  override _adaptTo(node: this | null){
+  override _adaptTo(_reference: Reference, selection: Selection<this>){
+    const node = selection.first()
     if(!node) return this
     const clone = this.clone()
     clone.spaceBeforeSlashes = node.spaceBeforeSlashes

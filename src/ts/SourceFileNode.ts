@@ -33,6 +33,8 @@ import { parseTemplateString } from "./parseTemplateString"
 import { parseTypeParameters } from "./parseTypeParameters"
 import { parseParameterList } from "./parseParameterList"
 import { parseFunction } from "./parseFunction"
+import { Reference } from "../Reference"
+import { Selection } from "../Selection"
 
 export class SourceFileNode extends Node {
 
@@ -56,13 +58,9 @@ export class SourceFileNode extends Node {
     return super.toString(contextProvider)
   }
 
-  override _adaptTo(
-    selectedReferenceNode: this,
-    selectedReferenceNodes: readonly this[],
-    allReferenceNodes: readonly Node[],
-  ){
-    const adapted = super._adaptTo(selectedReferenceNode, selectedReferenceNodes, allReferenceNodes) as SourceFileNode
-    adapted.indent = selectedReferenceNode.indent
+  override _adaptTo(reference: Reference, selection: Selection<this>){
+    const adapted = super._adaptTo(reference, selection) as SourceFileNode
+    adapted.indent = selection.first()?.indent ?? adapted.indent
     return adapted
   }
 

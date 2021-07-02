@@ -1,4 +1,6 @@
 import { Node } from "./Node"
+import { Reference } from "./Reference"
+import { Selection } from "./Selection"
 import { SingletonNode } from "./SingletonNode"
 
 export abstract class ForkNode extends SingletonNode {
@@ -16,36 +18,40 @@ export abstract class ForkNode extends SingletonNode {
     return false
   }
 
-  private chooseOption(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
-    const filteredNodes = super.select(selectedReferenceNodes, allReferenceNodes)
-    const filteredChildren = filteredNodes.map(x => x.children[0])
+  private chooseOption<Sel extends Selection<this>>(selection: Sel){
     const optionsSelections = this.allOptions.map(option => {
-      const selectedChildren = option.select(filteredChildren, [])
-      const selectedNodes = [...new Set(selectedChildren.map(x => x.parent as this))]
+      const filteredSelection = selection.fork()
+      const filteredChildren = option.filter(filteredSelection.map(x => x.children), true).apply()
       return {
-        selectedChildren,
-        selectedNodes,
+        filteredSelection,
+        filteredChildren,
         option,
-        weight: selectedNodes.length || Infinity, // Lowest weight is best
+        weight: filteredSelection.size || Infinity, // Lowest weight is best
       }
     })
     return optionsSelections.reduce(
       (a, b) => b.weight < a.weight ? b : a,
-      { selectedChildren: [], selectedNodes: [], option: this.children[0], weight: Infinity },
+      {
+        filteredSelection: selection.fork().clear(),
+        filteredChildren: new Selection(),
+        option: this.children[0],
+        weight: Infinity,
+      },
     )
   }
 
-  override select(
-    selectedReferenceNodes: readonly Node[],
-    allReferenceNodes: readonly Node[],
-  ): readonly this[]{
-    return this.chooseOption(selectedReferenceNodes, allReferenceNodes).selectedNodes
+  override filter<Sel extends Selection<Node>>(selection: Sel): Sel & Selection<this>{
+    return this.chooseOption(selection.applyClass(this.constructor)).filteredSelection.apply()
   }
 
-  override adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
-    const { option, selectedChildren } = this.chooseOption(selectedReferenceNodes, allReferenceNodes)
+  override select(reference: Reference, selection: Selection<Node>): Selection<this>{
+    return this.chooseOption(super.select(reference, selection)).filteredSelection
+  }
+
+  override adaptTo(reference: Reference, selection: Selection<Node>): Node{
+    const { option, filteredChildren } = this.chooseOption(super.select(reference, selection))
     const clone = this.clone()
-    clone.children = [option.adaptTo(selectedChildren, allReferenceNodes)]
+    clone.children = [option.adaptTo(reference, filteredChildren)]
     clone.alternatives = this.allOptions.filter(x => x !== option)
     return clone
   }

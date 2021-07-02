@@ -4,6 +4,7 @@ import { promises as fs } from "fs"
 import { join as joinPath } from "path"
 import ts from "typescript"
 import { SourceFileNode } from "../../src"
+import { Reference } from "../../src/Reference"
 import { createRichDiff } from "./diff"
 import { TestResult } from "./types"
 
@@ -33,7 +34,7 @@ export default (filterRaw: string[]) => {
       state = `parsing ${chalk.bold(path)}`
       const sourceNode = new SourceFileNode(ts.createSourceFile("ref", sourceText, ts.ScriptTarget.ES2020, true))
       state = `adapting ${chalk.bold(path)} to ${chalk.bold(path)}`
-      const outputNode = sourceNode.adaptTo([], sourceNode.getAllNodes())
+      const outputNode = sourceNode.adaptTo(new Reference(sourceNode))
       state = `stringifying ${chalk.bold(path)}`
       const outputText = outputNode.toString()
       if(outputText === sourceText) {

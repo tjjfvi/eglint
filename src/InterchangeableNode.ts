@@ -1,5 +1,7 @@
 
 import { Node } from "./Node"
+import { Reference } from "./Reference"
+import { Selection } from "./Selection"
 
 export abstract class InterchangeableNode extends Node {
 
@@ -11,8 +13,8 @@ export abstract class InterchangeableNode extends Node {
     return false
   }
 
-  override _adaptTo(node: this | null): Node{
-    return node?.cloneDeep() ?? this
+  override _adaptTo(_reference: Reference, selection: Selection<this>): Node{
+    return selection.first()?.cloneDeep() ?? this
   }
 
   override get requireContext(){

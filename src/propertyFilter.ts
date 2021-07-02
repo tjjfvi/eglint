@@ -1,8 +1,8 @@
-import { Filter } from "./FilterGroup"
+import { Filter } from "./Filter"
 
-export const propertyFilter = <T>(key: keyof T): Filter<T> => ({
-  filter(self, others){
+export const propertyFilter = <T>(key: keyof T): Filter<T, T> => ({
+  filter: (self, selection) => {
     const selfValue = self[key] // Only run getters once
-    return others.filter(other => other[key] === selfValue)
+    return selection.applyPredicate(other => other[key] === selfValue)
   },
 })

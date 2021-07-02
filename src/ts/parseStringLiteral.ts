@@ -3,6 +3,8 @@ import { FilterGroup } from "../FilterGroup"
 import { Node } from "../Node"
 import { predicateFilter } from "../predicateFilter"
 import { propertyFilter } from "../propertyFilter"
+import { Reference } from "../Reference"
+import { Selection } from "../Selection"
 import { SourceFileNode } from "./SourceFileNode"
 
 export function parseStringLiteral(this: SourceFileNode, tsNode: ts.Node){
@@ -41,14 +43,15 @@ export class StringLiteralNode extends Node {
             required: "weak",
             filter: propertyFilter("escapes"),
           },
-          predicateFilter((self, other) => (self.escapes & other.escapes) === self.escapes),
+          predicateFilter<this, this>((self, other) => (self.escapes & other.escapes) === self.escapes),
         ],
       }),
       propertyFilter("quote"),
     ],
   }))
 
-  override _adaptTo(selectedNode: this | null){
+  override _adaptTo(reference: Reference, selection: Selection<this>){
+    const selectedNode = selection.first()
     if(!selectedNode || selectedNode.quote === this.quote) return this
     const newQuote = selectedNode.quote
     const escapedInnerText = this.innerText

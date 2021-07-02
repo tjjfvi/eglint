@@ -1,38 +1,29 @@
+import { Filter, FilterFn } from "./Filter"
+import { Selection } from "./Selection"
 
-export type FilterFn<T> = <U extends T>(value: U, nodes: readonly U[], requireWeak: boolean) => readonly U[]
-export interface Filter<T> {
-  /** Defaults to Infinity */
-  priority?: number,
-  /** Defaults to false */
-  required?: "strong" | "weak" | false,
-  filter: FilterFn<T> | Filter<T>,
-  // Disallow arrays
-  slice?: never,
-}
+export type FilterGroupArgs<S, T> = Omit<Filter<S, T>, "filter"> & { mode: "and" | "or", filters: Filter<S, T>[] }
 
-export type FilterGroupArgs<T> = Omit<Filter<T>, "filter"> & { mode: "and" | "or", filters: Filter<T>[] }
+export class FilterGroup<S, T> implements Filter<S, T> {
 
-export class FilterGroup<T> implements Filter<T> {
-
-  filters: Filter<T>[] = []
+  filters: Filter<S, T>[] = []
 
   mode: "and" | "or"
   priority?: number
   required?: "strong" | "weak" | false
 
-  constructor({ mode, filters, priority, required }: FilterGroupArgs<T>){
+  constructor({ mode, filters, priority, required }: FilterGroupArgs<S, T>){
     this.addFilters(filters)
     this.mode = mode
     this.priority = priority
     this.required = required
   }
 
-  addFilters(filters: Filter<T>[]){
+  addFilters(filters: Filter<S, T>[]){
     for(const filter of filters)
       this.addFilter(filter)
   }
 
-  addFilter(filter: Filter<T>){
+  addFilter(filter: Filter<S, T>){
     let index = 0
     for(const existingFilter of this.filters)
       if((existingFilter.priority ?? Infinity) >= (filter.priority ?? Infinity))
@@ -43,39 +34,33 @@ export class FilterGroup<T> implements Filter<T> {
     return filter
   }
 
-  _filter<U extends T>(value: U, nodes: readonly U[], requireWeak: boolean){
-    const isRequired = (filter: Filter<T>) =>
+  _filter<Sel extends Selection<T>>(self: S, values: Sel, requireWeak: boolean): Sel{
+    const isRequired = (filter: Filter<S, T>) =>
       requireWeak ? filter.required : filter.required === "strong"
     if(this.mode === "and") {
       for(const filter of this.filters) {
-        if(!nodes.length)
+        if(!values.size)
           break
-        if(nodes.length === 1 && !isRequired(filter))
+        if(values.size === 1 && !isRequired(filter))
           continue
-        const filteredNodes = applyFilter(filter, value, nodes, requireWeak)
-        if(filteredNodes.length || isRequired(filter))
-          nodes = filteredNodes
+        const filteredValues = values.fork().applyFilter(filter, self, requireWeak)
+        if(filteredValues.size || isRequired(filter))
+          filteredValues.apply()
       }
-      return nodes
+      return values
     }
     else {
       for(const filter of this.filters) {
-        const filteredNodes = applyFilter(filter, value, nodes, requireWeak)
-        if(filteredNodes.length || isRequired(filter))
-          return filteredNodes
+        const filteredValues = values.fork().applyFilter(filter, self, requireWeak)
+        if(filteredValues.size || isRequired(filter))
+          return filteredValues.apply()
       }
-      return []
+      return values.clear()
     }
   }
 
-  get filter(): FilterFn<T>{
+  get filter(): FilterFn<S, T>{
     return this._filter
   }
 
-}
-
-export function applyFilter<T, U extends T>(filter: Filter<T>, value: U, nodes: readonly U[], requireWeak: boolean){
-  while(typeof filter.filter !== "function")
-    filter = filter.filter
-  return filter.filter(value, nodes, requireWeak)
 }

@@ -6,6 +6,7 @@ import { cacheFn, Node, SourceFileNode } from "../../src"
 import chalk from "chalk"
 import { createRichDiff } from "./diff"
 import { TestResult } from "./types"
+import { Reference } from "../../src/Reference"
 
 const testPath = (relativePath = "") =>
   joinPath(__dirname, "../crossproduct", relativePath)
@@ -115,7 +116,7 @@ export default async (update: boolean, filterRaw: string[]) => {
         const subNode = await parseFile(subPath)
 
         state = `adapting ${chalk.bold(subPath)} to ${chalk.bold(refPath)}`
-        const outNode = subNode.adaptTo([], refNode.getAllNodes())
+        const outNode = subNode.adaptTo(new Reference(refNode))
 
         state = `stringifying ${chalk.bold(outPath)}`
         const outText = outNode.toString()

@@ -1,7 +1,9 @@
 
-import { cacheFn } from "./cacheFn"
 import { ContextProvider } from "./Context"
+import { Filter } from "./Filter"
 import { FilterGroup } from "./FilterGroup"
+import { Reference } from "./Reference"
+import { Selection } from "./Selection"
 import { inspect } from "./utils"
 
 let idN = 0
@@ -21,7 +23,7 @@ export abstract class Node {
   parent: Node | null = null
   index = -1
 
-  filterGroup = new FilterGroup<this>({ mode: "and", filters: [] })
+  filterGroup = new FilterGroup<this, this>({ mode: "and", filters: [] })
 
   get filterByChildren(){
     return true
@@ -60,22 +62,20 @@ export abstract class Node {
   }
 
   protected _addChildrenFilters(){
-    this.filterGroup.filters = [...new Set(this.children.map(x => x.compareClass))]
+    this.filterGroup.filters = [...new Set(this.children.map(x => x.constructor))]
       .filter(Class => Class.prototype.influenceParent)
       .sort((a, b) => b.prototype.priority - a.prototype.priority)
-      .map(Class => ({
+      .map((Class): Filter<this, this> => ({
         priority: Class.prototype.priority,
         required: Class.prototype.required,
-        filter<T extends Node>(self: T, nodes: readonly T[]){
+        filter(self, selection){
           for(const child of self.children)
-            if(child.compareClass === Class) {
-              const children = nodes.flatMap(x => x.children)
-              const filteredChildren = child.select(children, [])
-              nodes = [...new Set(filteredChildren.map(x => x.parent as T))]
-              if(!nodes.length)
+            if(child.constructor === Class) {
+              child.filter(selection.map(x => x.children), true).apply()
+              if(!selection.size)
                 break
             }
-          return nodes
+          return selection
         },
       }))
   }
@@ -94,44 +94,38 @@ export abstract class Node {
     return array
   }
 
-  compareClass = this.constructor as NodeClass<this>
-  filterCompareClass: (nodes: readonly Node[]) => this[] = filterInstanceOf(this.compareClass) as never
-
-  filter(nodes: readonly Node[], requireWeak: boolean){
-    return this.filterGroup.filter(this, this.filterCompareClass(nodes), requireWeak)
+  filter<S extends Selection<Node>>(selection: S, requireWeak: boolean): S & Selection<this>{
+    return selection
+      .applyClass(this.constructor)
+      .applyFilter(this.filterGroup, this, requireWeak)
   }
 
   get requireContext(){
     return false
   }
 
-  select(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]){
-    let filteredNodes = this.filter(selectedReferenceNodes, true)
-    if(!filteredNodes.length && !this.requireContext)
-      filteredNodes = this.filter(allReferenceNodes, false)
-    return filteredNodes
+  select(reference: Reference, selection: Selection<Node>): Selection<this>{
+    const filteredSelection = this.filter(selection, true)
+    if(!filteredSelection.size && !this.requireContext)
+      return this.filter(reference.fullSelection(), false)
+    return filteredSelection
   }
 
-  adaptTo(selectedReferenceNodes: readonly Node[], allReferenceNodes: readonly Node[]): Node{
-    const filteredNodes = this.select(selectedReferenceNodes, allReferenceNodes)
-    return this._adaptTo(filteredNodes[0] ?? null, filteredNodes, allReferenceNodes)
+  adaptTo(reference: Reference, selection = reference.fullSelection()): Node{
+    return this._adaptTo(reference, this.select(reference, selection))
   }
 
   get adaptStages(): readonly AbstractNodeClass<Node>[]{
     return [Node]
   }
 
-  protected _adaptTo(
-    selectedReferenceNode: this | null,
-    selectedReferenceNodes: readonly this[],
-    allReferenceNodes: readonly Node[],
-  ): Node{
-    const selectedChildren = selectedReferenceNodes.flatMap(x => x.children)
+  protected _adaptTo(reference: Reference, selection: Selection<this>): Node{
+    const selectedChildren = selection.map(x => x.children)
     const adapted = this.clone()
     for(const Class of this.adaptStages) {
       adapted.children = adapted.children.map(c => (
         c instanceof Class
-          ? c.adaptTo(selectedChildren, allReferenceNodes)
+          ? c.adaptTo(reference, selectedChildren.clone())
           : c
       ))
       adapted._applyChildren()
@@ -228,13 +222,6 @@ export abstract class Node {
   }
 
 }
-
-const filterInstanceOf = cacheFn(
-  (ctor: new (...args: any) => Node) =>
-    cacheFn(
-      (nodes: readonly Node[]) =>
-        nodes.filter(n => n instanceof ctor),
-      new WeakMap(),
-    ),
-  new WeakMap(),
-)
+export interface Node {
+  constructor: NodeClass<this>,
+}
