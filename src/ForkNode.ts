@@ -44,12 +44,11 @@ export abstract class ForkNode extends SingletonNode {
     return this.chooseOption(selection.applyClass(this.constructor)).filteredSelection.apply()
   }
 
-  override select(reference: Reference, selection: Selection<Node>): Selection<this>{
-    return this.chooseOption(super.select(reference, selection)).filteredSelection
-  }
-
   override adaptTo(reference: Reference, selection: Selection<Node>): Node{
-    const { option, filteredChildren } = this.chooseOption(super.select(reference, selection))
+    let filteredSelection = super.filter(selection)
+    if(!filteredSelection.size && !this.requireContext)
+      filteredSelection = super.filter(reference.fullSelection())
+    const { option, filteredChildren } = this.chooseOption(filteredSelection)
     const clone = this.clone()
     clone.children = [option.adaptTo(reference, filteredChildren)]
     clone.alternatives = this.allOptions.filter(x => x !== option)

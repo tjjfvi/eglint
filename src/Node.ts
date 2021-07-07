@@ -104,15 +104,11 @@ export abstract class Node {
     return false
   }
 
-  select(reference: Reference, selection: Selection<Node>): Selection<this>{
-    const filteredSelection = this.filter(selection)
-    if(!filteredSelection.size && !this.requireContext)
-      return this.filter(reference.fullSelection())
-    return filteredSelection
-  }
-
   adaptTo(reference: Reference, selection = reference.fullSelection()): Node{
-    return this._adaptTo(reference, this.select(reference, selection))
+    let filteredSelection = this.filter(selection)
+    if(!filteredSelection.size && !this.requireContext)
+      filteredSelection = this.filter(reference.fullSelection())
+    return this._adaptTo(reference, filteredSelection)
   }
 
   get adaptStages(): readonly AbstractNodeClass<Node>[]{
