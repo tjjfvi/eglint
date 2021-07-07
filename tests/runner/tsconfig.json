@@ -19,8 +19,10 @@
   },
   "references": [
     {
-      "path": "../tsconfig.json"
+      "path": "../../tsconfig.json"
     }
   ],
-  "exclude": ["crossproduct"]
+  "exclude": [
+    "crossproduct"
+  ]
 }
