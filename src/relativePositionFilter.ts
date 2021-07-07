@@ -1,16 +1,14 @@
 import { Filter, FilterFn } from "./Filter"
 import { FilterGroup } from "./FilterGroup"
 import { Node } from "./Node"
+import { propertyFilter } from "./propertyFilter"
 
 function getSibling(node: Node, offset: number): Node | undefined{
   return node.parent?.children[node.index + offset]
 }
 
-const siblingExistenceMatches = (offset: 1 | -1): FilterFn<Node, Node> =>
-  (self, selection) => {
-    const sibling = getSibling(self, offset)
-    return selection.applyPredicate(x => !!getSibling(x, offset) === !!sibling)
-  }
+const siblingExistenceMatches = (offset: 1 | -1) =>
+  propertyFilter<Node>(x => !!getSibling(x, offset))
 
 const compareSiblingsLock = new Set<Node>()
 /* eslint-disable @typescript-eslint/no-non-null-assertion */

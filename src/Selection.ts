@@ -1,7 +1,8 @@
 import { Filter } from "./Filter"
 import { MultiMap } from "./MultiMap"
+import { Node } from "./Node"
 
-export class Selection<T> {
+export class Selection<T extends Node = Node> {
 
   constructor(public _values = new Set<T>()){}
 
@@ -17,7 +18,12 @@ export class Selection<T> {
     return this.applyPredicate((value): value is U => value instanceof Class)
   }
 
-  applyFilter<This extends Selection<T>, S>(this: This, filter: Filter<S, T>, self: S, requireWeak: boolean): This{
+  applyFilter<This extends Selection<T>, S extends Node>(
+    this: This,
+    filter: Filter<S, T>,
+    self: S,
+    requireWeak: boolean,
+  ): This{
     while(typeof filter.filter !== "function")
       filter = filter.filter
     filter.filter(self, this, requireWeak)
@@ -47,7 +53,7 @@ export class Selection<T> {
     return new ForkedSelection(this)
   }
 
-  map<U>(fn: (value: T) => Iterable<U>): MappedSelection<this, T, U>{
+  map<U extends Node>(fn: (value: T) => Iterable<U>): MappedSelection<this, T, U>{
     return new MappedSelection(this, fn)
   }
 
@@ -57,7 +63,7 @@ export class Selection<T> {
 
 }
 
-export class ForkedSelection<Sel extends Selection<T>, T> extends Selection<T> {
+export class ForkedSelection<Sel extends Selection<T>, T extends Node> extends Selection<T> {
 
   constructor(private _original: Sel){
     super(new Set(_original._values))
@@ -70,7 +76,7 @@ export class ForkedSelection<Sel extends Selection<T>, T> extends Selection<T> {
 
 }
 
-export class MappedSelection<Sel extends Selection<T>, T, U> extends Selection<U> {
+export class MappedSelection<Sel extends Selection<T>, T extends Node, U extends Node> extends Selection<U> {
 
   private _reverseMap = new MultiMap<U, T>()
 

@@ -1,9 +1,11 @@
 import { Filter, FilterFn } from "./Filter"
+import { Node } from "./Node"
 import { Selection } from "./Selection"
 
-export type FilterGroupArgs<S, T> = Omit<Filter<S, T>, "filter"> & { mode: "and" | "or", filters: Filter<S, T>[] }
+export type FilterGroupArgs<S extends Node, T extends Node> =
+  Omit<Filter<S, T>, "filter"> & { mode: "and" | "or", filters: Filter<S, T>[] }
 
-export class FilterGroup<S, T> implements Filter<S, T> {
+export class FilterGroup<S extends Node, T extends Node> implements Filter<S, T> {
 
   filters: Filter<S, T>[] = []
 

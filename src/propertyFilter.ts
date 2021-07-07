@@ -1,8 +1,12 @@
 import { Filter } from "./Filter"
+import { Node } from "./Node"
 
-export const propertyFilter = <T>(key: keyof T): Filter<T, T> => ({
-  filter: (self, selection) => {
-    const selfValue = self[key] // Only run getters once
-    return selection.applyPredicate(other => other[key] === selfValue)
-  },
-})
+export const propertyFilter = <T extends Node>(key: keyof T & string | ((value: T) => unknown)): Filter<T, T> => {
+  const getProperty = typeof key === "string" ? (x: T) => x[key] : key
+  return {
+    filter: (self, selection) => {
+      const selfValue = getProperty(self)
+      return selection.applyPredicate(other => getProperty(other) === selfValue)
+    },
+  }
+}
