@@ -20,7 +20,7 @@ const compareSiblings = (offset: 1 | -1): FilterFn<Node, Node> =>
       compareSiblingsLock.add(self)
       const sibling = getSibling(self, offset)
       if(!sibling) return selection
-      return sibling.filter(selection.map(x => [getSibling(x, offset)!]), true).apply()
+      return sibling.filter(selection.map(x => [getSibling(x, offset)!])).apply()
     }
     finally {
       compareSiblingsLock.delete(self)
@@ -29,18 +29,18 @@ const compareSiblings = (offset: 1 | -1): FilterFn<Node, Node> =>
 
 export const relativePositionFilter: Filter<Node, Node> = new FilterGroup({
   mode: "and",
-  required: "weak",
+  required: true,
   filters: [
-    { required: "weak", filter: siblingExistenceMatches(-1) },
-    { required: "weak", filter: siblingExistenceMatches(+1) },
+    { required: true, filter: siblingExistenceMatches(-1) },
+    { required: true, filter: siblingExistenceMatches(+1) },
     new FilterGroup({
       mode: "or",
-      required: "strong",
+      required: true,
       filters: [
         new FilterGroup({
           mode: "and",
           filters: [
-            { required: "strong", filter: compareSiblings(-1) },
+            { required: true, filter: compareSiblings(-1) },
             { filter: compareSiblings(+1) },
           ],
         }),

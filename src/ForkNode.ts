@@ -21,7 +21,7 @@ export abstract class ForkNode extends SingletonNode {
   private chooseOption<Sel extends Selection<this>>(selection: Sel){
     const optionsSelections = this.allOptions.map(option => {
       const filteredSelection = selection.fork()
-      const filteredChildren = option.filter(filteredSelection.map(x => x.children), true).apply()
+      const filteredChildren = option.filter(filteredSelection.map(x => x.children)).apply()
       return {
         filteredSelection,
         filteredChildren,

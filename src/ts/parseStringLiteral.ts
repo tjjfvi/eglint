@@ -33,14 +33,14 @@ export class StringLiteralNode extends Node {
   stringLiteralFilter = this.filterGroup.addFilter(new FilterGroup({
     mode: "and",
     priority: 10,
-    required: "strong",
+    required: true,
     filters: [
       new FilterGroup({
         mode: "or",
-        required: "weak",
+        required: true,
         filters: [
           {
-            required: "weak",
+            required: true,
             filter: propertyFilter("escapes"),
           },
           predicateFilter<this, this>((self, other) => (self.escapes & other.escapes) === self.escapes),

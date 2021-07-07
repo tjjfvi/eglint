@@ -43,8 +43,8 @@ export abstract class Node {
 
   init(){}
 
-  get required(): "strong" | "weak" | false{
-    return this.requireContext ? "strong" : false
+  get required(){
+    return this.requireContext
   }
 
   get influenceParent(){
@@ -71,7 +71,7 @@ export abstract class Node {
         filter(self, selection){
           for(const child of self.children)
             if(child.constructor === Class) {
-              child.filter(selection.map(x => x.children), true).apply()
+              child.filter(selection.map(x => x.children)).apply()
               if(!selection.size)
                 break
             }
@@ -94,10 +94,10 @@ export abstract class Node {
     return array
   }
 
-  filter<S extends Selection<Node>>(selection: S, requireWeak: boolean): S & Selection<this>{
+  filter<S extends Selection<Node>>(selection: S): S & Selection<this>{
     return selection
       .applyClass(this.constructor)
-      .applyFilter(this.filterGroup, this, requireWeak)
+      .applyFilter(this.filterGroup, this)
   }
 
   get requireContext(){
@@ -105,9 +105,9 @@ export abstract class Node {
   }
 
   select(reference: Reference, selection: Selection<Node>): Selection<this>{
-    const filteredSelection = this.filter(selection, true)
+    const filteredSelection = this.filter(selection)
     if(!filteredSelection.size && !this.requireContext)
-      return this.filter(reference.fullSelection(), false)
+      return this.filter(reference.fullSelection())
     return filteredSelection
   }
 

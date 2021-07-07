@@ -16,7 +16,7 @@ export class SyntaxListNode extends TsNodeNode {
   override init(){
     super.init()
     this.filterGroup.addFilter({
-      required: "strong",
+      required: true,
       filter: propertyFilter("isEmpty"),
     })
   }
@@ -53,7 +53,7 @@ export class SyntaxListSeparatorNode extends Node {
     super.init()
     this.filterGroup.addFilter({
       priority: 1,
-      required: "weak",
+      required: true,
       filter: relativePositionFilter,
     })
   }

@@ -67,16 +67,16 @@ export class LoneStatementNode extends TsNodeNode {}
 
 export class LoneBlockNode extends TsNodeNode {
 
-  override get required(): "weak"{
-    return "weak"
+  override get required(){
+    return true
   }
 
 }
 
 export class SwappableBlockNode extends ForkNode {
 
-  override get required(): "weak"{
-    return "weak"
+  override get required(){
+    return true
   }
 
 }

@@ -90,7 +90,7 @@ export class TriviaNode extends Node {
     super([child])
     this.filterGroup.addFilter({
       priority: 1,
-      required: "weak",
+      required: true,
       filter: relativePositionFilter,
     })
   }
@@ -103,7 +103,7 @@ export class TriviaNode extends Node {
     return true
   }
 
-  override get required(): false{
+  override get required(){
     return false
   }
 
@@ -173,8 +173,8 @@ export class EndlineComment extends Node {
     return clone
   }
 
-  override get required(): "strong"{
-    return "strong"
+  override get required(){
+    return true
   }
 
   override get hasText(){

@@ -11,7 +11,7 @@ export class FilterGroup<S extends Node, T extends Node> implements Filter<S, T>
 
   mode: "and" | "or"
   priority?: number
-  required?: "strong" | "weak" | false
+  required?: boolean
 
   constructor({ mode, filters, priority, required }: FilterGroupArgs<S, T>){
     this.addFilters(filters)
@@ -36,25 +36,23 @@ export class FilterGroup<S extends Node, T extends Node> implements Filter<S, T>
     return filter
   }
 
-  _filter<Sel extends Selection<T>>(self: S, values: Sel, requireWeak: boolean): Sel{
-    const isRequired = (filter: Filter<S, T>) =>
-      requireWeak ? filter.required : filter.required === "strong"
+  _filter<Sel extends Selection<T>>(self: S, values: Sel): Sel{
     if(this.mode === "and") {
       for(const filter of this.filters) {
         if(!values.size)
           break
-        if(values.size === 1 && !isRequired(filter))
+        if(values.size === 1 && !filter.required)
           continue
-        const filteredValues = values.fork().applyFilter(filter, self, requireWeak)
-        if(filteredValues.size || isRequired(filter))
+        const filteredValues = values.fork().applyFilter(filter, self)
+        if(filteredValues.size || filter.required)
           filteredValues.apply()
       }
       return values
     }
     else {
       for(const filter of this.filters) {
-        const filteredValues = values.fork().applyFilter(filter, self, requireWeak)
-        if(filteredValues.size || isRequired(filter))
+        const filteredValues = values.fork().applyFilter(filter, self)
+        if(filteredValues.size || filter.required)
           return filteredValues.apply()
       }
       return values.clear()

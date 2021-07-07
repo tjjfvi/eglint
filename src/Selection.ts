@@ -18,15 +18,10 @@ export class Selection<T extends Node = Node> {
     return this.applyPredicate((value): value is U => value instanceof Class)
   }
 
-  applyFilter<This extends Selection<T>, S extends Node>(
-    this: This,
-    filter: Filter<S, T>,
-    self: S,
-    requireWeak: boolean,
-  ): This{
+  applyFilter<This extends Selection<T>, S extends Node>(this: This, filter: Filter<S, T>, self: S): This{
     while(typeof filter.filter !== "function")
       filter = filter.filter
-    filter.filter(self, this, requireWeak)
+    filter.filter(self, this)
     return this
   }
 
