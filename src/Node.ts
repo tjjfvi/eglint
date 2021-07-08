@@ -71,7 +71,7 @@ export abstract class Node {
         filter(self, selection){
           for(const child of self.children)
             if(child.constructor === Class) {
-              child.filter(selection.map(x => x.children)).apply()
+              selection.applyMapped(x => x.children, sel => sel.applyNode(child))
               if(!selection.size)
                 break
             }
@@ -104,10 +104,10 @@ export abstract class Node {
     return false
   }
 
-  adaptTo(reference: Reference, selection = reference.fullSelection()): Node{
+  adaptTo(reference: Reference, selection = reference.fullSelection.clone()): Node{
     let filteredSelection = selection.applyNode(this)
     if(!filteredSelection.size && !this.requireContext)
-      filteredSelection = reference.fullSelection().applyNode(this)
+      filteredSelection = reference.fullSelection.clone().applyNode(this)
     return this._adaptTo(reference, filteredSelection)
   }
 

@@ -2,17 +2,45 @@ import { Filter } from "./Filter"
 import { MultiMap } from "./MultiMap"
 import { Node } from "./Node"
 
-export class Selection<T extends Node = Node> {
+export class ReadonlySelection<T extends Node = Node> {
 
-  constructor(private _values = new Set<T>()){}
+  protected values: ReadonlySet<T>
+  protected parent?: ReadonlySelection<T>
+
+  constructor(values?: Iterable<T>){
+    if(!values)
+      this.values = new Set()
+    else if(values instanceof Set)
+      this.values = values
+    else if(values instanceof ReadonlySelection) {
+      this.values = new Set(values.values)
+      this.parent = values
+    }
+    else
+      this.values = new Set(values)
+  }
 
   first(): T | undefined{
-    return this._values.values().next().value
+    return this.values.values().next().value
   }
 
   get size(){
-    return this._values.size
+    return this.values.size
   }
+
+  clone(): Selection<T>{
+    return new Selection(this)
+  }
+
+  [Symbol.iterator](): IterableIterator<T>{
+    return this.values[Symbol.iterator]()
+  }
+
+}
+
+export class Selection<T extends Node = Node> extends ReadonlySelection<T> {
+
+  protected override values!: Set<T>
 
   applyNode<This extends Selection<T>, U extends T>(this: This, node: U): This & Selection<U>{
     return node.filter(this)
@@ -33,74 +61,53 @@ export class Selection<T extends Node = Node> {
   applyPredicate<This extends Selection<T>, U extends T>(this: This, predicate: (value: T) => value is U): This & Selection<U>
   applyPredicate<This extends Selection<T>>(this: This, predicate: (value: T) => boolean): This
   applyPredicate<This extends Selection<T>>(this: This, predicate: (value: T) => boolean): This{
-    for(const value of this._values)
+    for(const value of this.values)
       if(!predicate(value))
-        this._values.delete(value)
+        this.values.delete(value)
     return this
-  }
-
-  clone(): Selection<T>{
-    return new Selection(new Set(this._values))
   }
 
   clear<This extends Selection<T>>(this: This): This{
-    this._values.clear()
+    this.values.clear()
     return this
   }
 
-  fork<This extends Selection<T>>(this: This): ForkedSelection<This, T>{
-    return new ForkedSelection(this)
+  map<U extends Node>(fn: (value: T) => Iterable<U>): Selection<U>{
+    const mapped = new Selection<U>()
+    for(const t of this.values)
+      for(const u of fn(t))
+        mapped.values.add(u)
+    return mapped
   }
 
-  map<U extends Node>(fn: (value: T) => Iterable<U>): MappedSelection<this, T, U>{
-    return new MappedSelection(this, fn)
+  maybeApply(cb: (selection: Selection<T>) => void, required?: boolean): boolean{
+    const forked = new Selection(this)
+    cb(forked)
+    if(forked.size || required) {
+      this.values = forked.values
+      return true
+    }
+    return false
   }
 
-  [Symbol.iterator](): IterableIterator<T>{
-    return this._values[Symbol.iterator]()
-  }
-
-}
-
-export class ForkedSelection<Sel extends Selection<T>, T extends Node> extends Selection<T> {
-
-  private _originalSize = this._original.size
-
-  constructor(private _original: Sel){
-    super(new Set(_original["_values"]))
-  }
-
-  apply(): Sel{
-    if(this._originalSize !== this._original.size)
-      throw new Error("ForkedSelection#apply called late")
-    this._original["_values"] = this["_values"]
-    return this._original
-  }
-
-}
-
-export class MappedSelection<Sel extends Selection<T>, T extends Node, U extends Node> extends Selection<U> {
-
-  private _reverseMap = new MultiMap<U, T>()
-  private _originalSize = this._original.size
-
-  constructor(private _original: Sel, fn: (value: T) => Iterable<U>){
-    super(new Set())
-    for(const t of this._original["_values"])
+  applyMapped<This extends Selection<T>, U extends Node>(
+    this: This,
+    fn: (value: T) => Iterable<U>,
+    cb: (mapped: Selection<U>) => void,
+  ): This{
+    const mapped = new Selection<U>()
+    const reverseMap = new MultiMap<U, T>()
+    for(const t of this.values)
       for(const u of fn(t)) {
-        this["_values"].add(u)
-        this._reverseMap.add(u, t)
+        mapped.values.add(u)
+        reverseMap.add(u, t)
       }
-  }
-
-  apply(): Sel{
-    if(this._originalSize !== this._original.size)
-      throw new Error("MappedSelection#apply called late")
-    this._original["_values"].clear()
-    for(const u of this["_values"])
-      for(const t of this._reverseMap.get(u))
-        this._original["_values"].add(t)
-    return this._original
+    cb(mapped)
+    this.values.clear()
+    for(const u of mapped.values)
+      for(const t of reverseMap.get(u))
+        this.values.add(t)
+    return this
   }
 
 }

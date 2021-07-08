@@ -36,26 +36,22 @@ export class FilterGroup<S extends Node, T extends Node> implements Filter<S, T>
     return filter
   }
 
-  _filter<Sel extends Selection<T>>(self: S, values: Sel): Sel{
+  _filter<Sel extends Selection<T>>(self: S, selection: Sel): Sel{
     if(this.mode === "and") {
       for(const filter of this.filters) {
-        if(!values.size)
+        if(!selection.size)
           break
-        if(values.size === 1 && !filter.required)
+        if(selection.size === 1 && !filter.required)
           continue
-        const filteredValues = values.fork().applyFilter(filter, self)
-        if(filteredValues.size || filter.required)
-          filteredValues.apply()
+        selection.maybeApply(sel => sel.applyFilter(filter, self), filter.required)
       }
-      return values
+      return selection
     }
     else {
-      for(const filter of this.filters) {
-        const filteredValues = values.fork().applyFilter(filter, self)
-        if(filteredValues.size || filter.required)
-          return filteredValues.apply()
-      }
-      return values.clear()
+      for(const filter of this.filters)
+        if(selection.maybeApply(sel => sel.applyFilter(filter, self), filter.required))
+          return selection
+      return selection.clear()
     }
   }
 
