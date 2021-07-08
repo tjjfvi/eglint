@@ -20,7 +20,7 @@ const compareSiblings = (offset: 1 | -1): FilterFn<Node, Node> =>
       compareSiblingsLock.add(self)
       const sibling = getSibling(self, offset)
       if(!sibling) return selection
-      return sibling.filter(selection.map(x => [getSibling(x, offset)!])).apply()
+      return selection.map(x => [getSibling(x, offset)!]).applyNode(sibling).apply()
     }
     finally {
       compareSiblingsLock.delete(self)

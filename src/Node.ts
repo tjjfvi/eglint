@@ -105,9 +105,9 @@ export abstract class Node {
   }
 
   adaptTo(reference: Reference, selection = reference.fullSelection()): Node{
-    let filteredSelection = this.filter(selection)
+    let filteredSelection = selection.applyNode(this)
     if(!filteredSelection.size && !this.requireContext)
-      filteredSelection = this.filter(reference.fullSelection())
+      filteredSelection = reference.fullSelection().applyNode(this)
     return this._adaptTo(reference, filteredSelection)
   }
 

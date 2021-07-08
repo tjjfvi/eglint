@@ -14,6 +14,10 @@ export class Selection<T extends Node = Node> {
     return this._values.size
   }
 
+  applyNode<This extends Selection<T>, U extends T>(this: This, node: U): This & Selection<U>{
+    return node.filter(this)
+  }
+
   applyClass<This extends Selection<T>, U extends T>(this: This, Class: Ctor<U>): This & Selection<U>{
     return this.applyPredicate((value): value is U => value instanceof Class)
   }
