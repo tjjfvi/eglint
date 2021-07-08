@@ -19,29 +19,26 @@ export abstract class ForkNode extends SingletonNode {
   }
 
   private chooseOption<Sel extends Selection<this>>(selection: Sel){
-    const optionsSelections = this.allOptions.map(option => {
-      const filteredSelection = selection.fork()
-      const filteredChildren = filteredSelection.map(x => x.children).applyNode(option).apply()
-      return {
-        filteredSelection,
-        filteredChildren,
-        option,
-        weight: filteredSelection.size || Infinity, // Lowest weight is best
+    for(const option of this.allOptions) {
+      const filteredChildren = selection.map(x => x.children).applyNode(option)
+      if(filteredChildren.size) {
+        filteredChildren.apply()
+        return {
+          selection,
+          filteredChildren,
+          option,
+        }
       }
-    })
-    return optionsSelections.reduce(
-      (a, b) => b.weight < a.weight ? b : a,
-      {
-        filteredSelection: selection.fork().clear(),
-        filteredChildren: new Selection(),
-        option: this.children[0],
-        weight: Infinity,
-      },
-    )
+    }
+    return {
+      selection: selection.clear(),
+      filteredChildren: new Selection(),
+      option: this.children[0],
+    }
   }
 
   override filter<Sel extends Selection<Node>>(selection: Sel): Sel & Selection<this>{
-    return this.chooseOption(super.filter(selection)).filteredSelection.apply()
+    return this.chooseOption(super.filter(selection)).selection
   }
 
   override adaptTo(reference: Reference, selection: Selection<Node>): Node{
