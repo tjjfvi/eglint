@@ -6,7 +6,6 @@ import { IndentationContext, IndentNode } from "../IndentNode"
 import { NewlineNode } from "../NewlineNode"
 import { SpaceNode } from "../SpaceNode"
 import { InterchangeableNode } from "../InterchangeableNode"
-import { relativePositionFilter } from "../relativePositionFilter"
 import { ContextProvider } from "../Context"
 import { propertyFilter } from "../propertyFilter"
 import { Reference } from "../Reference"
@@ -91,7 +90,7 @@ export class TriviaNode extends Node {
     this.filterGroup.addFilter({
       priority: 1,
       required: true,
-      filter: relativePositionFilter,
+      filter: propertyFilter("index"),
     })
   }
 
@@ -156,7 +155,7 @@ export class EndlineComment extends Node {
       text += " "
     text += this.innerText
     const indentation = contextProvider.getContext(IndentationContext)
-    if(this.findNextCousin(x => x.hasText)?.toString()[0] !== "\n") {
+    if(!(this.findNextCousin(x => x.hasText) instanceof NewlineNode)) {
       indentation.level += this.deltaIndent
       text += "\n" + indentation
     }
