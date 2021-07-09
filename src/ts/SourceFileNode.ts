@@ -103,7 +103,7 @@ export class SourceFileNode extends Node {
       return this.parseTemplateString(tsNode)
     if(tsNode.kind === ts.SyntaxKind.Parameter)
       return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsNode.getChildren()))
-    if(tsNode.kind === ts.SyntaxKind.FunctionExpression)
+    if(tsNode.kind === ts.SyntaxKind.FunctionExpression || tsNode.kind === ts.SyntaxKind.MethodDeclaration)
       return this.parseFunction(tsNode.getChildren())
 
     const tsChildren = tsNode.getChildren()

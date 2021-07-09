@@ -21,10 +21,8 @@ export class IndentationContext extends Context {
   indent = "  "
 
   override toString(){
-    if(this.level < 0) {
+    if(this.level < 0)
       throw new Error("Invalid indent level " + this.level)
-      return ""
-    }
     return this.indent.repeat(this.level)
   }
 

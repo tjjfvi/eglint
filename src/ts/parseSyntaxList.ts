@@ -5,7 +5,7 @@ import { relativePositionFilter } from "../relativePositionFilter"
 import { SingletonNode } from "../SingletonNode"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
-import { syntaxKindName } from "./tsUtils"
+import { printTsNode, syntaxKindName } from "./tsUtils"
 
 export class SyntaxListNode extends TsNodeNode {
 
@@ -82,6 +82,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
     case ts.SyntaxKind.FunctionType:
     case ts.SyntaxKind.ConstructorType:
     case ts.SyntaxKind.TypeReference:
+    case ts.SyntaxKind.ExpressionWithTypeArguments:
       return this.parseCommaSyntaxList(tsNode)
     case ts.SyntaxKind.Block:
     case ts.SyntaxKind.SourceFile:
@@ -96,6 +97,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
         ]),
       )
     default:
+      printTsNode(this.sourceFile, tsNode.parent)
       throw new Error("Unhandled SyntaxList Parent " + syntaxKindName(tsNode.parent.kind))
   }
 }

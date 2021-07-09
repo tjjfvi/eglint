@@ -11,6 +11,7 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
   // - Identifier
   // - PropertyAccessExpression
   // - ElementAccessExpression
+  // - OmittedExpression
   // - ObjectBindingPattern
   // - ArrayBindingPattern
   // - ObjectLiteralExpression
@@ -20,6 +21,7 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
     case ts.SyntaxKind.Identifier:
     case ts.SyntaxKind.PropertyAccessExpression:
     case ts.SyntaxKind.ElementAccessExpression:
+    case ts.SyntaxKind.OmittedExpression:
       return this.parseTsNode(tsNode)
 
     case ts.SyntaxKind.ObjectBindingPattern:

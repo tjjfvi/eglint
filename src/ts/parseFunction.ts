@@ -6,7 +6,7 @@ import { EmptyNode, TsNodeNode } from "./TsNodeNode"
 export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
   // tsChildren is [
   //   <Modifiers>?,
-  //   "function",
+  //   "function"?,
   //   "*"?,
   //   <Name>?
   //   ...[
@@ -23,21 +23,30 @@ export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
   //   ]?,
   //   <Body>?,
   // ]
-  const functionKeywordIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.FunctionKeyword)
+  const tsModifiers = getChildOfKind(tsChildren, 0, ts.SyntaxKind.SyntaxList)
+  const postModifierIndex = tsModifiers ? 1 : 0
+  const tsFunctionKeyword = getChildOfKind(tsChildren, postModifierIndex, ts.SyntaxKind.FunctionKeyword)
+  const postFunctionKeywordIndex = postModifierIndex + (tsFunctionKeyword ? 1 : 0)
+  const tsAsterisk = getChildOfKind(tsChildren, postFunctionKeywordIndex, ts.SyntaxKind.AsteriskToken)
+  const postAsteriskIndex = postFunctionKeywordIndex + (tsAsterisk ? 1 : 0)
   const lessThanIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.LessThanToken)
   const openParenIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.OpenParenToken)
   const colonIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.ColonToken)
-  const tsModifiers = tsChildren[functionKeywordIndex - 1]?.getChildren() ?? []
-  const tsFunctionKeyword = tsChildren[functionKeywordIndex]
-  const tsAsterisk = getChildOfKind(tsChildren, functionKeywordIndex + 1, ts.SyntaxKind.AsteriskToken)
-  const tsName = getChildOfKind(tsChildren, functionKeywordIndex + (tsAsterisk ? 2 : 1), ts.SyntaxKind.Identifier)
+  const tsName = getChildOfKind(
+    tsChildren,
+    postAsteriskIndex,
+    ts.SyntaxKind.Identifier,
+    ts.SyntaxKind.ConstructorKeyword,
+    ts.SyntaxKind.ComputedPropertyName,
+  )
   const tsTypeParams = lessThanIndex === -1 ? undefined : tsChildren.slice(lessThanIndex, lessThanIndex + 3)
   const tsParameterList = tsChildren.slice(openParenIndex, openParenIndex + 3)
   const tsReturnTypeAnnotation = colonIndex === -1 ? undefined : tsChildren.slice(colonIndex, colonIndex + 2)
   const tsBody = tsChildren[colonIndex === -1 ? openParenIndex + 3 : colonIndex + 2]
   return new FunctionNode(this.finishTrivia([
-    this.parseModifiers(tsModifiers, tsFunctionKeyword),
-    this.parseTsNode(tsFunctionKeyword),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.parseModifiers(tsModifiers?.getChildren() ?? [], tsFunctionKeyword ?? tsAsterisk ?? tsName!),
+    tsFunctionKeyword ? this.parseTsNode(tsFunctionKeyword) : new EmptyNode(),
     tsAsterisk ? new FunctionAsteriskNode(this.finishTrivia([
       ...this.parseTriviaBetween(tsFunctionKeyword, tsAsterisk),
       this.parseTsNode(tsAsterisk),

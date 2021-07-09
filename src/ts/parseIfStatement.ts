@@ -67,7 +67,7 @@ export function parseIfStatement(
       throw new Error("Invalid if statement")
   }
 }
-[]
+
 export function parseElseStatement(this: SourceFileNode, tsChildren: ts.Node[]){
   // tsChildren is [ "else", <Body> ]
   const elseAndTrivia = [

@@ -4,14 +4,19 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
 export function parseStrippedStatement(this: SourceFileNode, tsNode: ts.Node, tsChildren: ts.Node[]): Node{
-  if(tsNode.kind === ts.SyntaxKind.IfStatement)
-    return this.parseIfStatement(tsNode, tsChildren)
-  if(tsNode.kind === ts.SyntaxKind.ForStatement)
-    return this.parseForLoop(tsNode, tsChildren)
-  if(tsNode.kind === ts.SyntaxKind.ClassDeclaration || tsNode.kind === ts.SyntaxKind.InterfaceDeclaration)
-    return this.parseClassLike(tsNode)
-  if(tsNode.kind === ts.SyntaxKind.FunctionDeclaration)
-    return this.parseFunction(tsChildren)
-
-  return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsChildren))
+  switch(tsNode.kind) {
+    case ts.SyntaxKind.IfStatement:
+      return this.parseIfStatement(tsNode, tsChildren)
+    case ts.SyntaxKind.ForStatement:
+      return this.parseForLoop(tsNode, tsChildren)
+    case ts.SyntaxKind.ClassDeclaration:
+    case ts.SyntaxKind.InterfaceDeclaration:
+      return this.parseClassLike(tsNode)
+    case ts.SyntaxKind.FunctionDeclaration:
+    case ts.SyntaxKind.MethodDeclaration:
+    case ts.SyntaxKind.Constructor:
+      return this.parseFunction(tsChildren)
+    default:
+      return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsChildren))
+  }
 }
