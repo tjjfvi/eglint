@@ -5,7 +5,7 @@ import { relativePositionFilter } from "../relativePositionFilter"
 import { SingletonNode } from "../SingletonNode"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
-import { printTsNode, syntaxKindName } from "./tsUtils"
+import { syntaxKindName } from "./tsUtils"
 
 export class SyntaxListNode extends TsNodeNode {
 
@@ -88,6 +88,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
     case ts.SyntaxKind.SourceFile:
     case ts.SyntaxKind.CaseClause:
     case ts.SyntaxKind.DefaultClause:
+    case ts.SyntaxKind.TypeLiteral:
       return this.parseSemiSyntaxList(tsNode)
     case ts.SyntaxKind.CaseBlock:
       return new SyntaxListNode(
@@ -97,7 +98,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
         ]),
       )
     default:
-      printTsNode(this.sourceFile, tsNode.parent)
+      this.printTsNode(tsNode.parent)
       throw new Error("Unhandled SyntaxList Parent " + syntaxKindName(tsNode.parent.kind))
   }
 }

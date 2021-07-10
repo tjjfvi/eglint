@@ -16,9 +16,9 @@ export function parseTemplateString(this: SourceFileNode, tsNode: ts.Node){
     children.push(
       new TemplateStringInterpolation(this.finishTrivia([
         new TemplateStringInterpolationOpen("${"),
-        ...this.parseTrivia(lastPos, spanChildren[0].getStart()),
+        ...this.parseTrivia(lastPos, this.getStart(spanChildren[0])),
         this.parseTsNode(spanChildren[0]),
-        ...this.parseTrivia(spanChildren[0].end, spanChildren[1].getStart()),
+        ...this.parseTrivia(spanChildren[0].end, this.getStart(spanChildren[1])),
         new TemplateStringInterpolationOpen("}"),
       ])),
       new TemplateStringText(

@@ -35,6 +35,8 @@ import { parseParameterList } from "./parseParameterList"
 import { parseFunction } from "./parseFunction"
 import { Reference } from "../Reference"
 import { Selection } from "../Selection"
+import { syntaxKindName } from "./tsUtils"
+import { inspect } from "../utils"
 
 export class SourceFileNode extends Node {
 
@@ -46,7 +48,7 @@ export class SourceFileNode extends Node {
   constructor(public sourceFile: ts.SourceFile){
     super([])
     this.children = [
-      ...this.parseTrivia(0, sourceFile.getStart(sourceFile)),
+      ...this.parseTrivia(0, this.getStart(sourceFile)),
       ...this.parseTsChildren(sourceFile.getChildren(sourceFile)),
     ]
     this._applyChildren()
@@ -116,11 +118,11 @@ export class SourceFileNode extends Node {
 
   parsePartialTsChildren(tsChildren: ts.Node[]){
     let children = []
-    let lastPos = tsChildren[0].getStart(this.sourceFile)
+    let lastPos = this.getStart(tsChildren[0])
 
     for(const child of tsChildren) {
       if(children.length)
-        children.push(...this.parseTrivia(lastPos, child.getStart(this.sourceFile)))
+        children.push(...this.parseTrivia(lastPos, this.getStart(child)))
       lastPos = child.end
       children.push(this.parseTsNode(child))
     }
@@ -133,15 +135,37 @@ export class SourceFileNode extends Node {
   }
 
   peekText(tsNode: ts.Node){
-    return this.source.slice(tsNode.getStart(this.sourceFile), tsNode.end)
+    return this.source.slice(this.getStart(tsNode), tsNode.end)
   }
 
   getText(tsNode: ts.Node){
-    const start = tsNode.getStart(this.sourceFile)
+    const start = this.getStart(tsNode)
     if(this.pos !== start)
       throw new Error(`Gap at positions ${this.pos}-${start}`)
     this.pos = tsNode.end
     return this.peekText(tsNode)
+  }
+
+  // See the values of .getStart() for JSDocComment & PropertyAssignment in
+  // https://ts-ast-viewer.com/#code/FAYw9gdgzgLgBADzgXjgb2HLcD0AqPOAQwCMQ48dNsiAuOAVgBpgBfYIA
+  getStart(tsNode: ts.Node): number{
+    while(tsNode.getChildCount())
+      tsNode = tsNode.getChildAt(0)
+    return tsNode.getStart()
+  }
+
+  printTsNode(node: ts.Node, indent = 0){
+    const children = node.getChildren()
+    const start = this.getStart(node)
+    const end = node.end
+    const text = this.peekText(node)
+    console.log(
+      "| ".repeat(indent) + syntaxKindName(node.kind),
+      `${inspect(start)}-${inspect(end)}`,
+      (children.length ? "{" : inspect(text) + ","),
+    )
+    for(const child of children) this.printTsNode(child, indent + 1)
+    if(children.length) console.log("| ".repeat(indent) + "},")
   }
 
   parseTrivia = parseTrivia

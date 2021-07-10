@@ -1,10 +1,13 @@
 import ts from "typescript"
 import { InterchangeableNode } from "../InterchangeableNode"
 import { propertyFilter } from "../propertyFilter"
+import { getChildOfKind } from "./getChildOfKind"
 import { SyntaxListEntryNode, SyntaxListSeparatorNode, SyntaxListNode } from "./parseSyntaxList"
 import { SourceFileNode } from "./SourceFileNode"
 import { TriviaNode } from "./trivia"
 import { TsNodeNode } from "./TsNodeNode"
+
+// All of the functions in this file also allow commas, for use in interfaces & object type literals
 
 export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
   const children = tsNode.getChildren()
@@ -27,16 +30,14 @@ export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
 
 export function parseSemi(this: SourceFileNode, node: ts.Node | undefined){
   if(!node)
-    return new SemiNode(false)
+    return new SemiNode(null)
   this.getText(node) // Advance position
-  return new SemiNode(true)
+  return new SemiNode(node.kind === ts.SyntaxKind.SemicolonToken ? ";" : ",")
 }
 
 export function getSemi(this: SourceFileNode, tsNode: ts.Node){
   const children = tsNode.getChildren()
-  const hasSemicolon = children[children.length - 1]?.kind === ts.SyntaxKind.SemicolonToken
-  const semicolonTsNode = hasSemicolon ? children[children.length - 1] : undefined
-  return semicolonTsNode
+  return getChildOfKind(children, children.length - 1, ts.SyntaxKind.SemicolonToken, ts.SyntaxKind.CommaToken)
 }
 
 export function getSemilessChildren(this: SourceFileNode, tsNode: ts.Node){
@@ -63,11 +64,11 @@ export class SemiSyntaxListNode extends SyntaxListNode {
 const asiHazards = [..."+-*/([`"] // https://jsbench.me/aykqfs958p
 export class SemiNode extends InterchangeableNode {
 
-  constructor(public present: boolean){
+  constructor(public value: null | ";" | ","){
     super()
     this.filterGroup.addFilters([
       propertyFilter("semiRequired"),
-      propertyFilter("present"),
+      propertyFilter("value"),
     ])
   }
 
@@ -77,11 +78,11 @@ export class SemiNode extends InterchangeableNode {
   }
 
   override toString(){
-    return this.present || this.semiRequired ? ";" : ""
+    return this.value ?? (this.semiRequired ? ";" : "")
   }
 
   override get hasText(){
-    return this.present || this.semiRequired
+    return !!this.value || this.semiRequired
   }
 
   override get requireContext(){

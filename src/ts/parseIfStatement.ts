@@ -2,7 +2,6 @@ import ts from "typescript"
 import { LoneStatementNode, SwappableBlockNode } from "./parseStatement"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
-import { printTsNode } from "./tsUtils"
 
 export function parseIfStatement(
   this: SourceFileNode,
@@ -61,9 +60,9 @@ export function parseIfStatement(
       ]))
     }
     default:
-      printTsNode(this.sourceFile, tsNode)
+      this.printTsNode(tsNode)
       for(const x of tsChildren)
-        printTsNode(this.sourceFile, x)
+        this.printTsNode(x)
       throw new Error("Invalid if statement")
   }
 }

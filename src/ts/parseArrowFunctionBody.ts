@@ -27,7 +27,7 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
           ])),
           new SyntaxListSeparatorNode([
             ...this.emptyTrivia(),
-            new SemiNode(false),
+            new SemiNode(null),
             ...this.emptyTrivia(),
             new IndentNode(0),
           ]),

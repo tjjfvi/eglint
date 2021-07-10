@@ -13,7 +13,7 @@ import { Selection } from "../Selection"
 
 export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Node){
   if(!a || !b) return this.emptyTrivia()
-  return this.parseTrivia(a.end, b.getStart(this.sourceFile))
+  return this.parseTrivia(a.end, this.getStart(b))
 }
 
 export function emptyTrivia(this: SourceFileNode){

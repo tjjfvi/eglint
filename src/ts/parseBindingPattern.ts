@@ -2,7 +2,6 @@ import ts from "typescript"
 import { Node } from "../Node"
 import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
-import { printTsNode } from "./tsUtils"
 
 const { ObjectBindingPattern, ArrayBindingPattern } = TsNodeNode.for
 
@@ -49,7 +48,7 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
     }
 
     default:
-      printTsNode(this.sourceFile, tsNode)
+      this.printTsNode(tsNode)
       throw new Error("Invalid binding pattern")
   }
 

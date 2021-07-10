@@ -15,6 +15,7 @@ export function parseStrippedStatement(this: SourceFileNode, tsNode: ts.Node, ts
     case ts.SyntaxKind.FunctionDeclaration:
     case ts.SyntaxKind.MethodDeclaration:
     case ts.SyntaxKind.Constructor:
+    case ts.SyntaxKind.MethodSignature:
       return this.parseFunction(tsChildren)
     default:
       return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsChildren))
