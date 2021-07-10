@@ -20,9 +20,9 @@ export function parseArrayBindingElement(this: SourceFileNode, tsNode: ts.Node):
     if(!binding) throw new Error("Unreachable")
     if(!equals || !fallback) return new EmptyNode()
     return new ArrayBindingFallback(this.finishTrivia([
-      ...this.parseTriviaBetween(binding, equals),
+      this.parseTriviaBetween(binding, equals),
       this.parseTsNode(equals),
-      ...this.parseTriviaBetween(equals, fallback),
+      this.parseTriviaBetween(equals, fallback),
       this.parseTsNode(fallback),
     ]))
   }
@@ -43,7 +43,7 @@ export function parseArrayBindingElement(this: SourceFileNode, tsNode: ts.Node):
           // ]
           return new ArrayRestBindingElement(this.finishTrivia([
             this.parseTsNode(tsChildren[0]),
-            ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+            this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
             this.parseBindingPattern(tsChildren[1]),
           ]))
 
@@ -74,7 +74,7 @@ export function parseArrayBindingElement(this: SourceFileNode, tsNode: ts.Node):
       // ]
       return new ArrayRestBindingElement(this.finishTrivia([
         this.parseTsNode(tsChildren[0]),
-        ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+        this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
         this.parseBindingPattern(tsChildren[1]),
       ]))
 

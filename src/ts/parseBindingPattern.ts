@@ -28,9 +28,9 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
       const [tsOpenBrace, tsSyntaxList, tsCloseBrace] = tsNode.getChildren()
       return new ObjectBindingPattern(this.finishTrivia([
         this.parseTsNode(tsOpenBrace),
-        ...this.parseTriviaBetween(tsOpenBrace, tsSyntaxList),
+        this.parseTriviaBetween(tsOpenBrace, tsSyntaxList),
         this.parseCommaSyntaxList(tsSyntaxList as ts.SyntaxList, this.parseObjectBindingElement),
-        ...this.parseTriviaBetween(tsSyntaxList, tsCloseBrace),
+        this.parseTriviaBetween(tsSyntaxList, tsCloseBrace),
         this.parseTsNode(tsCloseBrace),
       ]))
     }
@@ -40,9 +40,9 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
       const [tsOpenBracket, tsSyntaxList, tsCloseBracket] = tsNode.getChildren()
       return new ArrayBindingPattern(this.finishTrivia([
         this.parseTsNode(tsOpenBracket),
-        ...this.parseTriviaBetween(tsOpenBracket, tsSyntaxList),
+        this.parseTriviaBetween(tsOpenBracket, tsSyntaxList),
         this.parseCommaSyntaxList(tsSyntaxList as ts.SyntaxList, this.parseArrayBindingElement),
-        ...this.parseTriviaBetween(tsSyntaxList, tsCloseBracket),
+        this.parseTriviaBetween(tsSyntaxList, tsCloseBracket),
         this.parseTsNode(tsCloseBracket),
       ]))
     }

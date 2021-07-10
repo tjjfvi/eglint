@@ -10,19 +10,19 @@ export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList, p
   for(const [i, child] of children.entries())
     if(child.kind === ts.SyntaxKind.CommaToken)
       nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
-        ...this.parseTriviaBetween(children[i - 1], child),
+        this.parseTriviaBetween(children[i - 1], child),
         i === children.length - 1
           ? (this.getText(child), new TrailingCommaNode(true))
           : this.parseTsNode(child),
-        ...this.parseTriviaBetween(child, children[i + 1]),
+        this.parseTriviaBetween(child, children[i + 1]),
       ])))
     else
       nodes.push(new SyntaxListEntryNode(parseChild.call(this, child)))
   if(children.length && children[children.length - 1].kind !== ts.SyntaxKind.CommaToken)
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
       new TrailingCommaNode(false),
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
     ])))
   return new SyntaxListNode(nodes)
 }

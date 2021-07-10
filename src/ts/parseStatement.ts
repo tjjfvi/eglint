@@ -19,18 +19,18 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
     return new SwappableBlockNode(
       new LoneBlockNode(this.finishTrivia([
         this.parseTsNode(tsChildren[0]),
-        ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+        this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
         new SemiSyntaxListNode([
           new SyntaxListEntryNode(
             statement = this.parseStrippedStatement(tsStatement, this.getSemilessChildren(tsStatement)),
           ),
           new SyntaxListSeparatorNode(semiChildren = this.finishTrivia([
-            ...this.parseTriviaBetween(this.getLastNonSemiChild(tsStatement), this.getSemi(tsStatement)),
+            this.parseTriviaBetween(this.getLastNonSemiChild(tsStatement), this.getSemi(tsStatement)),
             this.parseSemi(this.getSemi(tsStatement)),
-            ...this.emptyTrivia(),
+            this.emptyTrivia(),
           ])),
         ]),
-        ...this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
+        this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
         this.parseTsNode(tsChildren[2]),
       ])),
       new LoneStatementNode([statement, ...semiChildren]),
@@ -40,9 +40,9 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
   const base = new LoneStatementNode([
     statement = this.parseStrippedStatement(tsNode, this.getSemilessChildren(tsNode)),
     ...semiChildren = this.finishTrivia([
-      ...this.parseTriviaBetween(this.getLastNonSemiChild(tsNode), this.getSemi(tsNode)),
+      this.parseTriviaBetween(this.getLastNonSemiChild(tsNode), this.getSemi(tsNode)),
       this.parseSemi(this.getSemi(tsNode)),
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
     ]),
   ])
   if(forceUnswappable)
@@ -51,12 +51,12 @@ export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswa
     base,
     new LoneBlockNode([
       new TsNodeNode.for.OpenBraceToken("{"),
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
       new SemiSyntaxListNode([
         new SyntaxListEntryNode(statement),
         new SyntaxListSeparatorNode(semiChildren),
       ]),
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
       new TsNodeNode.for.CloseBraceToken("}"),
       new IndentNode(0),
     ]),

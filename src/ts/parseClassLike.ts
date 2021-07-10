@@ -46,26 +46,26 @@ export function parseClassLike(this: SourceFileNode, tsNode: ts.Node){
     this.parseModifiers(tsModifiers, tsClassKeyword),
     this.parseTsNode(tsClassKeyword),
     tsName ? new ClassNameNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsClassKeyword, tsName),
+      this.parseTriviaBetween(tsClassKeyword, tsName),
       this.parseTsNode(tsName),
     ])) : new EmptyNode(),
     tsTypeParams ? new ClassTypeParametersNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsName ?? tsClassKeyword, tsTypeParams[0]),
+      this.parseTriviaBetween(tsName ?? tsClassKeyword, tsTypeParams[0]),
       this.parseTypeParameters(tsTypeParams),
     ])) : new EmptyNode(),
     tsExtendsClause ? new ClassClauseNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsTypeParams?.[2] ?? tsName ?? tsClassKeyword, tsExtendsClause),
+      this.parseTriviaBetween(tsTypeParams?.[2] ?? tsName ?? tsClassKeyword, tsExtendsClause),
       this.parseTsNode(tsExtendsClause),
     ])) : new EmptyNode(),
     tsImplementsClause ? new ClassClauseNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsExtendsClause ?? tsTypeParams?.[2] ?? tsName ?? tsClassKeyword, tsImplementsClause),
+      this.parseTriviaBetween(tsExtendsClause ?? tsTypeParams?.[2] ?? tsName ?? tsClassKeyword, tsImplementsClause),
       this.parseTsNode(tsImplementsClause),
     ])) : new EmptyNode(),
-    ...this.parseTriviaBetween(tsChildren[openBraceIndex - 1], tsOpenBrace),
+    this.parseTriviaBetween(tsChildren[openBraceIndex - 1], tsOpenBrace),
     this.parseTsNode(tsOpenBrace),
-    ...this.parseTriviaBetween(tsOpenBrace, tsBody),
+    this.parseTriviaBetween(tsOpenBrace, tsBody),
     this.parseSemiSyntaxList(tsBody),
-    ...this.parseTriviaBetween(tsBody, tsCloseBrace),
+    this.parseTriviaBetween(tsBody, tsCloseBrace),
     this.parseTsNode(tsCloseBrace),
   ]))
 }

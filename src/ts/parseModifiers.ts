@@ -9,7 +9,7 @@ export function parseModifiers(this: SourceFileNode, tsModifiers: ts.Node[], tsN
     tsModifiers.map((tsModifier, i) =>
       new ModifierNode(this.finishTrivia([
         this.parseTsNode(tsModifier),
-        ...this.parseTriviaBetween(tsModifier, tsModifiers[i + 1] ?? tsNext),
+        this.parseTriviaBetween(tsModifier, tsModifiers[i + 1] ?? tsNext),
       ])),
     ),
   )

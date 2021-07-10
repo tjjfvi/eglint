@@ -9,9 +9,9 @@ export function parseArrowFunction(this: SourceFileNode, tsNode: ts.Node){
   const l = tsChildren.length
   return new TsNodeNode.for.ArrowFunction(this.finishTrivia([
     this.parseArrowFunctionSig(tsChildren.slice(0, -2)),
-    ...this.parseTriviaBetween(tsChildren[l - 3], tsChildren[l - 2]),
+    this.parseTriviaBetween(tsChildren[l - 3], tsChildren[l - 2]),
     this.parseTsNode(tsChildren[l - 2]),
-    ...this.parseTriviaBetween(tsChildren[l - 2], tsChildren[l - 1]),
+    this.parseTriviaBetween(tsChildren[l - 2], tsChildren[l - 1]),
     this.parseArrowFunctionBody(tsChildren[l - 1]),
   ]))
 }

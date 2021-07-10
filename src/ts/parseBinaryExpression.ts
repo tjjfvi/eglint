@@ -12,9 +12,9 @@ export function parseBinaryExpression(this: SourceFileNode, tsNode: ts.Node){
     op.kind >= ts.SyntaxKind.FirstAssignment && op.kind <= ts.SyntaxKind.LastAssignment
       ? this.parseBindingPattern(a)
       : this.parseTsNode(a),
-    ...this.parseTriviaBetween(a, op),
+    this.parseTriviaBetween(a, op),
     new OperatorNode(this.parseTsNode(op)),
-    ...this.parseTriviaBetween(op, b),
+    this.parseTriviaBetween(op, b),
     this.parseTsNode(b),
   ]))
 }

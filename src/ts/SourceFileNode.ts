@@ -48,7 +48,7 @@ export class SourceFileNode extends Node {
   constructor(public sourceFile: ts.SourceFile){
     super([])
     this.children = [
-      ...this.parseTrivia(0, this.getStart(sourceFile)),
+      this.parseTrivia(0, this.getStart(sourceFile)),
       ...this.parseTsChildren(sourceFile.getChildren(sourceFile)),
     ]
     this._applyChildren()
@@ -122,7 +122,7 @@ export class SourceFileNode extends Node {
 
     for(const child of tsChildren) {
       if(children.length)
-        children.push(...this.parseTrivia(lastPos, this.getStart(child)))
+        children.push(this.parseTrivia(lastPos, this.getStart(child)))
       lastPos = child.end
       children.push(this.parseTsNode(child))
     }

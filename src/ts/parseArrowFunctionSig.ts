@@ -25,9 +25,9 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
           new EmptyNode(),
           new ParameterListNode([
             new TsNodeNode.for.OpenParenToken("("),
-            ...this.emptyTrivia(),
+            this.emptyTrivia(),
             parsedSyntaxList,
-            ...this.emptyTrivia(),
+            this.emptyTrivia(),
             new TsNodeNode.for.OpenParenToken(")"),
             new IndentNode(0),
           ]),
@@ -69,7 +69,7 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
         new EmptyNode(),
         this.parseParameterList(tsChildren.slice(0, 3)),
         new ArrowFunctionReturnTypeAnnotation(this.finishTrivia([
-          ...this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
+          this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
           ...this.parsePartialTsChildren(tsChildren.slice(3)),
         ])),
       ]))
@@ -77,7 +77,7 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       return new ArrowFunctionSigNode(this.finishTrivia([
         new ArrowFunctionTypeParameters(this.finishTrivia([
           this.parseTypeParameters(tsChildren.slice(0, 3)),
-          ...this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
+          this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
         ])),
         this.parseParameterList(tsChildren.slice(3, 6)),
         new EmptyNode(),
@@ -86,11 +86,11 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       return new ArrowFunctionSigNode(this.finishTrivia([
         new ArrowFunctionTypeParameters(this.finishTrivia([
           this.parseTypeParameters(tsChildren.slice(0, 3)),
-          ...this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
+          this.parseTriviaBetween(tsChildren[2], tsChildren[3]),
         ])),
         this.parseParameterList(tsChildren.slice(3, 6)),
         new ArrowFunctionReturnTypeAnnotation(this.finishTrivia([
-          ...this.parseTriviaBetween(tsChildren[5], tsChildren[6]),
+          this.parseTriviaBetween(tsChildren[5], tsChildren[6]),
           ...this.parsePartialTsChildren(tsChildren.slice(6)),
         ])),
       ]))

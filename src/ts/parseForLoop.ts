@@ -33,19 +33,19 @@ export function parseForLoop(this: SourceFileNode, tsNode: ts.Node, tsChildren: 
 
   return new TsNodeNode.for.ForStatement(this.finishTrivia([
     ...this.parsePartialTsChildren(tsChildren.slice(0, 2)),
-    ...this.parseTriviaBetween(tsChildren[1], initializer ?? firstSemi),
+    this.parseTriviaBetween(tsChildren[1], initializer ?? firstSemi),
     initializer ? this.parseTsNode(initializer) : new EmptyNode(),
-    ...this.parseTriviaBetween(initializer, firstSemi),
+    this.parseTriviaBetween(initializer, firstSemi),
     this.parseTsNode(firstSemi),
-    ...this.parseTriviaBetween(firstSemi, condition ?? secondSemi),
+    this.parseTriviaBetween(firstSemi, condition ?? secondSemi),
     condition ? this.parseTsNode(condition) : new EmptyNode(),
-    ...this.parseTriviaBetween(condition, secondSemi),
+    this.parseTriviaBetween(condition, secondSemi),
     this.parseTsNode(secondSemi),
-    ...this.parseTriviaBetween(secondSemi, increment ?? closeParen),
+    this.parseTriviaBetween(secondSemi, increment ?? closeParen),
     increment ? this.parseTsNode(increment) : new EmptyNode(),
-    ...this.parseTriviaBetween(increment, closeParen),
+    this.parseTriviaBetween(increment, closeParen),
     this.parseTsNode(closeParen),
-    ...this.parseTriviaBetween(closeParen, body),
+    this.parseTriviaBetween(closeParen, body),
     this.parseStatement(body),
   ]))
 

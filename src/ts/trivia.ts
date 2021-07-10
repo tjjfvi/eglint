@@ -10,6 +10,7 @@ import { ContextProvider } from "../Context"
 import { propertyFilter } from "../propertyFilter"
 import { Reference } from "../Reference"
 import { Selection } from "../Selection"
+import { SingletonNode } from "../SingletonNode"
 
 export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Node){
   if(!a || !b) return this.emptyTrivia()
@@ -17,11 +18,11 @@ export function parseTriviaBetween(this: SourceFileNode, a?: ts.Node, b?: ts.Nod
 }
 
 export function emptyTrivia(this: SourceFileNode){
-  return [new TriviaNode(new WhitespaceNode([]))]
+  return new TriviaNode([new TriviaSubNode(new WhitespaceNode([]))])
 }
 
 export function spaceTrivia(this: SourceFileNode){
-  return [new TriviaNode(new WhitespaceNode([new SpaceNode(1)]))]
+  return new TriviaNode([new TriviaSubNode(new WhitespaceNode([new SpaceNode(1)]))])
 }
 
 export function parseTrivia(this: SourceFileNode, start: number, end: number){
@@ -43,12 +44,12 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
       const [, spaceBeforeSlashes, spaceAfterSlashes, innerText, indent] = match
       finishWhitespaceChildren()
       const deltaIndent = calculateDeltaIndent(indent)
-      nodes.push(new TriviaNode(new EndlineComment(
+      nodes.push(new EndlineComment(
         !!spaceBeforeSlashes,
         !!spaceAfterSlashes,
         innerText,
         deltaIndent,
-      )))
+      ))
       whitespaceChildren.push(new NewlineNode(1, deltaIndent))
     }
     else if((match = /^(?:\n([ \t]*))+/.exec(text)))
@@ -57,7 +58,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
       whitespaceChildren.push(new SpaceNode(match[0].length))
     else if((match = /^\/\*[^]*\*\//.exec(text))) {
       finishWhitespaceChildren()
-      nodes.push(new TriviaNode(new BlockComment(match[0])))
+      nodes.push(new BlockComment(match[0]))
     }
     else
       throw new Error("Encountered invalid trivia")
@@ -65,9 +66,9 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
     this.pos += match[0].length
   }
   finishWhitespaceChildren()
-  return nodes
+  return new TriviaNode(nodes.map(x => new TriviaSubNode(x)))
   function finishWhitespaceChildren(){
-    nodes.push(new TriviaNode(new WhitespaceNode(whitespaceChildren, deltaIndentAcc)))
+    nodes.push(new WhitespaceNode(whitespaceChildren, deltaIndentAcc))
     whitespaceChildren = []
     deltaIndentAcc = 0
   }
@@ -76,8 +77,10 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
 export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[], IndentNode]{
   let deltaIndent = 0
   for(const child of children)
-    if(child instanceof TriviaNode && child.children[0] instanceof WhitespaceNode)
-      deltaIndent += child.children[0].deltaIndent
+    if(child instanceof TriviaNode)
+      for(const node of child.children)
+        if(node.children[0] instanceof WhitespaceNode)
+          deltaIndent += node.children[0].deltaIndent
   children.push(new IndentNode(-deltaIndent))
   this.indentLevel -= deltaIndent
   return children as [...Node[], IndentNode]
@@ -85,13 +88,33 @@ export function finishTrivia(this: SourceFileNode, children: Node[]): [...Node[]
 
 export class TriviaNode extends Node {
 
-  constructor(child: Node){
-    super([child])
+  override init(){
+    super.init()
     this.filterGroup.addFilter({
-      priority: 1,
       required: true,
       filter: propertyFilter("index"),
     })
+  }
+
+  override get priority(){
+    return -1
+  }
+
+  override get requireContext(){
+    return true
+  }
+
+  override get required(){
+    return false
+  }
+
+}
+
+export class TriviaSubNode extends SingletonNode {
+
+  override init(){
+    super.init()
+    this.filterGroup.addFilter(propertyFilter("index"))
   }
 
   override get priority(){

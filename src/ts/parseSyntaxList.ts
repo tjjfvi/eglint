@@ -94,7 +94,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
       return new SyntaxListNode(
         tsNode.getChildren().flatMap((tsChild, i, tsChildren) => [
           this.parseTsNode(tsChild),
-          ...this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
+          this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
         ]),
       )
     default:

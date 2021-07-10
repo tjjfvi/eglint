@@ -7,9 +7,9 @@ export function parseTypeParameters(this: SourceFileNode, tsChildren: ts.Node[])
     throw new Error("Invalid parameter list")
   return new TypeParametersNode(this.finishTrivia([
     this.parseTsNode(tsChildren[0]),
-    ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+    this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
     this.parseCommaSyntaxList(tsChildren[1] as ts.SyntaxList),
-    ...this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
+    this.parseTriviaBetween(tsChildren[1], tsChildren[2]),
     this.parseTsNode(tsChildren[2]),
   ]))
 }

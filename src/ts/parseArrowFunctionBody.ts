@@ -17,22 +17,22 @@ export function parseArrowFunctionBody(this: SourceFileNode, bodyTsNode: ts.Node
       new ArrowFunctionExpressionBody(expression = this.parseTsNode(bodyTsNode)),
       new Block([
         new OpenBraceToken("{"),
-        ...this.spaceTrivia(),
+        this.spaceTrivia(),
         new SyntaxListNode([
           new SyntaxListEntryNode(new ReturnStatement([
             new ReturnKeyword("return"),
-            ...this.spaceTrivia(),
+            this.spaceTrivia(),
             expression,
             new IndentNode(0),
           ])),
           new SyntaxListSeparatorNode([
-            ...this.emptyTrivia(),
+            this.emptyTrivia(),
             new SemiNode(null),
-            ...this.emptyTrivia(),
+            this.emptyTrivia(),
             new IndentNode(0),
           ]),
         ]),
-        ...this.spaceTrivia(),
+        this.spaceTrivia(),
         new CloseBraceToken("}"),
         new IndentNode(0),
       ]),

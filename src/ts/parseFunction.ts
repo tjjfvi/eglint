@@ -48,27 +48,27 @@ export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
     this.parseModifiers(tsModifiers?.getChildren() ?? [], tsFunctionKeyword ?? tsAsterisk ?? tsName!),
     tsFunctionKeyword ? this.parseTsNode(tsFunctionKeyword) : new EmptyNode(),
     tsAsterisk ? new FunctionAsteriskNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsFunctionKeyword, tsAsterisk),
+      this.parseTriviaBetween(tsFunctionKeyword, tsAsterisk),
       this.parseTsNode(tsAsterisk),
     ])) : new EmptyNode(),
     tsName ? new FunctionNameNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsAsterisk ?? tsFunctionKeyword, tsName),
+      this.parseTriviaBetween(tsAsterisk ?? tsFunctionKeyword, tsName),
       this.parseTsNode(tsName),
     ])) : new EmptyNode(),
-    ...this.parseTriviaBetween(tsName ?? tsAsterisk ?? tsFunctionKeyword, tsTypeParams?.[0] ?? tsParameterList[0]),
+    this.parseTriviaBetween(tsName ?? tsAsterisk ?? tsFunctionKeyword, tsTypeParams?.[0] ?? tsParameterList[0]),
     tsTypeParams ? new FunctionTypeParametersNode(this.finishTrivia([
       this.parseTypeParameters(tsTypeParams),
-      ...this.parseTriviaBetween(tsTypeParams?.[2], tsParameterList[0]),
+      this.parseTriviaBetween(tsTypeParams?.[2], tsParameterList[0]),
     ])) : new EmptyNode(),
     new FunctionParameterListNode(this.finishTrivia([
       this.parseParameterList(tsParameterList),
     ])),
     tsReturnTypeAnnotation ? new FunctionReturnTypeAnnotationNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsParameterList[2], tsReturnTypeAnnotation[0]),
+      this.parseTriviaBetween(tsParameterList[2], tsReturnTypeAnnotation[0]),
       ...this.parsePartialTsChildren(tsReturnTypeAnnotation),
     ])) : new EmptyNode(),
     tsBody ? new FunctionBodyNode(this.finishTrivia([
-      ...this.parseTriviaBetween(tsReturnTypeAnnotation?.[1] ?? tsParameterList[2], tsBody),
+      this.parseTriviaBetween(tsReturnTypeAnnotation?.[1] ?? tsParameterList[2], tsBody),
       this.parseTsNode(tsBody),
     ])) : new EmptyNode(),
   ]))

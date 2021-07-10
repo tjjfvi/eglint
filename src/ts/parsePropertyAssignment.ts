@@ -14,9 +14,9 @@ export function parsePropertyAssignment(this: SourceFileNode, tsNode: ts.Node){
       identifier,
       new PropertyAssignment([
         identifier,
-        ...this.emptyTrivia(),
+        this.emptyTrivia(),
         new ColonToken(":"),
-        ...this.emptyTrivia(),
+        this.emptyTrivia(),
         identifier,
         new IndentNode(0),
       ]),

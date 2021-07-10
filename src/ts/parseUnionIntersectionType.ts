@@ -11,16 +11,16 @@ export function parseUnionIntersectionType(this: SourceFileNode, tsNode: ts.Node
   const nodes = []
   if(tsChildren[0].kind !== separatorKind)
     nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
       new (isUnion ? LeadingBarNode : LeadingAmpersandNode)(false),
-      ...this.emptyTrivia(),
+      this.emptyTrivia(),
     ])))
   for(const [i, tsChild] of tsChildren.entries())
     if(tsChild.kind === separatorKind)
       nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
-        ...this.parseTriviaBetween(tsChildren[i - 1], tsChild),
+        this.parseTriviaBetween(tsChildren[i - 1], tsChild),
         this.parseTsNode(tsChild),
-        ...this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
+        this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
       ])))
     else
       nodes.push(new SyntaxListEntryNode(this.parseTsNode(tsChild)))

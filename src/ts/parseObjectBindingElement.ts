@@ -27,17 +27,17 @@ export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node)
       return new SwappableObjectBindingAlias(
         new EmptyNode(),
         new ObjectBindingAlias([
-          ...this.emptyTrivia(),
+          this.emptyTrivia(),
           new ColonToken(":"),
-          ...this.spaceTrivia(),
+          this.spaceTrivia(),
           this.retrieveParsedTsNode(property),
           new IndentNode(0),
         ]),
       )
     const baseAlias = new ObjectBindingAlias(this.finishTrivia([
-      ...this.parseTriviaBetween(property, colon),
+      this.parseTriviaBetween(property, colon),
       this.parseTsNode(colon),
-      ...this.parseTriviaBetween(colon, binding),
+      this.parseTriviaBetween(colon, binding),
       this.parseBindingPattern(binding),
     ]))
     if(this.peekText(binding) !== this.peekText(property))
@@ -52,9 +52,9 @@ export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node)
     if(!property) throw new Error("Unreachable")
     if(!equals || !fallback) return new EmptyNode()
     return new ObjectBindingFallback(this.finishTrivia([
-      ...this.parseTriviaBetween(binding ?? property, equals),
+      this.parseTriviaBetween(binding ?? property, equals),
       this.parseTsNode(equals),
-      ...this.parseTriviaBetween(equals, fallback),
+      this.parseTriviaBetween(equals, fallback),
       this.parseTsNode(fallback),
     ]))
   }
@@ -161,7 +161,7 @@ export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node)
       // ]
       return new ObjectRestBindingElement(this.finishTrivia([
         this.parseTsNode(tsChildren[0]),
-        ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+        this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
         this.parseBindingPattern(tsChildren[1]),
       ]))
 

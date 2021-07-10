@@ -30,7 +30,7 @@ export function parseIfStatement(
     case 5:
       return new IfStatement(this.finishTrivia([
         ...this.parsePartialTsChildren(tsChildren.slice(0, 4)),
-        ...this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
+        this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
         this.parseStatement(tsChildren[4]),
       ]))
     case 7: {
@@ -52,10 +52,10 @@ export function parseIfStatement(
       return new IfElseStatement(this.finishTrivia([
         new IfStatement(this.finishTrivia([
           ...this.parsePartialTsChildren(tsChildren.slice(0, 4)),
-          ...this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
+          this.parseTriviaBetween(tsChildren[3], tsChildren[4]),
           this.parseStatement(tsChildren[4], forceUnswappable),
         ])),
-        ...this.parseTriviaBetween(tsChildren[4], tsChildren[5]),
+        this.parseTriviaBetween(tsChildren[4], tsChildren[5]),
         this.parseElseStatement(tsChildren.slice(5)),
       ]))
     }
@@ -71,7 +71,7 @@ export function parseElseStatement(this: SourceFileNode, tsChildren: ts.Node[]){
   // tsChildren is [ "else", <Body> ]
   const elseAndTrivia = [
     this.parseTsNode(tsChildren[0]),
-    ...this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
+    this.parseTriviaBetween(tsChildren[0], tsChildren[1]),
   ]
   const body = this.parseStatement(tsChildren[1])
   const isElseIf = true
