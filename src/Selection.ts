@@ -32,7 +32,7 @@ export class ReadonlySelection<T extends Node = Node> {
     return new Selection(this)
   }
 
-  [Symbol.iterator](): IterableIterator<T>{
+  public [Symbol.iterator](): IterableIterator<T>{
     return this.values[Symbol.iterator]()
   }
 
