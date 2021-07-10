@@ -11,8 +11,11 @@
     "module": "CommonJS",
     "composite": true,
     "outDir": "dist",
+    "jsx": "react",
+    "importHelpers": true,
     "lib": [
-      "ES2019"
+      "ES2019",
+      "DOM"
     ]
   },
   "ts-node": {
@@ -21,5 +24,6 @@
   "include": [
     "src/**/*",
     "tests/runner/**/*",
+    "3up/**/*",
   ],
 }

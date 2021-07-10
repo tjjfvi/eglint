@@ -1,0 +1,56 @@
+prefix(prop)
+  -webkit-{prop} slice(arguments, 1)
+  -moz-{prop} slice(arguments, 1)
+  -ms-{prop} slice(arguments, 1)
+  {prop} slice(arguments, 1)
+
+*
+  box-sizing border-box !important
+
+  &:focus
+    outline 0
+
+  &:not(input)
+    prefix user-select none
+
+*:before
+*:after
+  box-sizing border-box !important
+
+body, html
+  background-color $black
+  color $white
+  margin 0
+  padding 0
+  overflow hidden
+  width 100%
+  height 100%
+
+#root
+  font-family "Roboto", sans-serif
+  width 100%
+  height 100%
+  display flex
+
+body
+  display flex
+  justify-content center
+  align-items center
+
+::-webkit-scrollbar
+  width 10px
+  background-color $black
+
+::-webkit-scrollbar-button
+  display none
+
+::-webkit-scrollbar-track-piece
+  background-color $darkgrey
+  border 2px solid $black
+  border-radius 100px
+
+::-webkit-scrollbar-thumb
+  height 50px
+  background-color $grey
+  border 2px solid $black
+  border-radius 100px
