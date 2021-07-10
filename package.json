@@ -2,9 +2,12 @@
   "name": "eglint",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "test": "ts-node tests/runner",
+    "test": "npx tsc && node dist/tests/runner",
+    "test-watch": "onchange -ik 'src/**/*' 'tests/**/*' -e 'tests/crossproduct/*/out/**/*' -- npm run test-watch_ --silent",
+    "test-watch_": "printf '\\e[2J\\e[3J\\e[H'; npm run test",
     "tcu": "rm -rf tests/crossproduct/*/out; npm run test -- -u",
     "debug": "node --inspect-brk -r ts-node/register tests/runner",
     "index": "create-index -X ts -x ts -x tsx -Sui src/ -c {}; npm run lint"
@@ -24,6 +27,8 @@
     "diff": "^4.0.2",
     "eslint": "^7.24.0",
     "node-watch": "^0.7.1",
+    "onchange": "^7.1.0",
+    "piscina": "^3.1.0",
     "ts-node": "^9.1.1",
     "typescript": "^4.3.2",
     "yargs": "^6.6.0"

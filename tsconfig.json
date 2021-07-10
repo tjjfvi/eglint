@@ -10,7 +10,6 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "composite": true,
-    "rootDir": "src",
     "outDir": "dist",
     "lib": [
       "ES2019"
@@ -20,6 +19,7 @@
     "transpileOnly": true,
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/runner/**/*",
   ],
 }
