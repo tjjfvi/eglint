@@ -1,48 +1,55 @@
 
-import React, { useState, useRef } from "react"
-import { Reference, SourceFileNode } from "../src"
+import React, { useState } from "react"
+import { Reference, SourceFileNode, Node } from "../src"
 import ts from "typescript"
-
-import Editor from "@monaco-editor/react"
-import { editor } from "monaco-editor"
+import { loader } from "@monaco-editor/react"
+import { RootNodeView } from "./RootNodeView"
 
 export const App = () => {
+  Node["idN"] = 0
   const [referenceText, setReferenceText] = useState('// reference\n\nconsole.log("Hello, world!")\n')
   const [subjectText, setSubjectText] = useState('// subject\n\nconsole.log("Hello, world!")\n')
-  let outputText: string
+  const referenceNode = tryParse(referenceText)
+  const subjectNode = tryParse(subjectText)
+  const outputNode = tryValue(() =>
+    referenceNode instanceof Error
+      ? referenceNode
+      : subjectNode instanceof Error
+        ? subjectNode
+        : subjectNode.adaptTo(new Reference(referenceNode)),
+  )
+  const outputText = tryValue(() =>
+    outputNode instanceof Error
+      ? outputNode
+      : outputNode.toString().replace(/^\/\/ subject\n/, "// output\n"),
+  )
+  return <>
+    <RootNodeView text={referenceText} onChange={setReferenceText} node={referenceNode}/>
+    <RootNodeView text={subjectText} onChange={setSubjectText} node={subjectNode}/>
+    <RootNodeView text={outputText} node={outputNode}/>
+  </>
+}
+
+loader.init().then(monaco => monaco.editor.defineTheme("eglint", {
+  base: "vs-dark",
+  inherit: true,
+  rules: [],
+  colors: {
+    "editor.background": "#151820",
+  },
+}))
+
+function tryParse(text: string): Node | Error{
+  return tryValue(() => new SourceFileNode(ts.createSourceFile("", text, ts.ScriptTarget.ES2020, true)))
+}
+
+function tryValue<T, >(fn: () => T): T | Error{
+  let result
   try {
-    const referenceNode = new SourceFileNode(ts.createSourceFile("ref", referenceText, ts.ScriptTarget.ES2020, true))
-    const subjectNode = new SourceFileNode(ts.createSourceFile("ref", subjectText, ts.ScriptTarget.ES2020, true))
-    const outputNode = subjectNode.adaptTo(new Reference(referenceNode))
-    outputText = outputNode.toString().replace(/^\/\/ subject\n/, "// output\n")
+    result = fn()
   }
   catch (e) {
-    outputText = e.toString()
+    result = e as Error
   }
-  const editor = useRef<editor.IStandaloneCodeEditor>()
-  editor.current?.setValue(outputText)
-  console.log("hi")
-  return <>
-    <Editor
-      defaultLanguage="typescript"
-      defaultValue={referenceText}
-      onChange={x => setReferenceText(x ?? "")}
-      theme="vs-dark"
-    />
-    <Editor
-      defaultLanguage="typescript"
-      defaultValue={subjectText}
-      onChange={x => setSubjectText(x ?? "")}
-      theme="vs-dark"
-    />
-    <Editor
-      defaultLanguage="typescript"
-      defaultValue={outputText}
-      theme="vs-dark"
-      options={{
-        readOnly: true,
-      }}
-      onMount={x => editor.current = x}
-    />
-  </>
+  return result
 }

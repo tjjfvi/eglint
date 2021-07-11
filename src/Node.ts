@@ -6,18 +6,18 @@ import { Reference } from "./Reference"
 import { Selection } from "./Selection"
 import { inspect } from "./utils"
 
-let idN = 0
-
 export type NodeClass<T extends Node> = (new (...args: any) => T) & Omit<typeof Node, never>
 export type AbstractNodeClass<T extends Node> = (abstract new (...args: any) => T) & Omit<typeof Node, never>
 
 export abstract class Node {
 
+  private static idN = 0
+
   get priority(){
     return 1
   }
 
-  id = idN++
+  id = Node.idN++
   text = ""
   children: readonly Node[] = []
   parent: Node | null = null
@@ -132,7 +132,7 @@ export abstract class Node {
   protected clone(): this{
     const clone: this = Object.create(Object.getPrototypeOf(this))
     Object.defineProperties(clone, Object.getOwnPropertyDescriptors(this))
-    clone.id = idN++
+    clone.id = Node.idN++
     clone.parent = null
     clone.index = -1
     return clone

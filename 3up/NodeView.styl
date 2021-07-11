@@ -1,0 +1,52 @@
+
+@import "./colors.styl"
+
+.NodeView
+  white-space pre
+  font-family Inconsolata, monospace
+  overflow auto
+
+  .line
+    display flex
+    align-items center
+    justify-content flex-start
+    height 25px
+
+    .id
+      font-size 13px
+      color $lightgrey
+      margin-top 4px
+    
+    .text
+      color $green
+
+    &:hover
+      background-color $darkgrey
+
+    .arrow
+      display flex
+      justify-content center
+      align-items center
+      flex 0 0 auto
+
+      width 25px
+      height 25px
+
+      &:before
+        content ""
+        width 10px
+        height 10px
+        border 0px solid $lightgrey
+        border-right-width 1px
+        border-bottom-width 1px
+        transform unquote("rotate(45deg) translate(-2.5px, -2.5px)")
+      &.closed:before
+        transform unquote("rotate(-45deg) translate(-2.5px, -2.5px)")
+      &.leaf:before
+        border-right-width 0px
+        transform unquote("translate(0, -5px)")
+  
+  .children
+    margin-left 12px
+    border-left 1px solid $grey
+    padding-left 12px
