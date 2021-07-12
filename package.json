@@ -12,7 +12,7 @@
     "debug": "node --inspect-brk -r ts-node/register tests/runner",
     "index": "create-index -X ts -x ts -x tsx -Sui src/ -c {}; npm run lint",
     "postinstall": "rm node_modules/eglint; ln -s ../.. node_modules/eglint",
-    "3up": "rollup -cw",
+    "3up": "NODE_ENV=\"development\" rollup -cw",
     "build-3up": "NODE_ENV=\"production\" rollup -c"
   },
   "keywords": [],
