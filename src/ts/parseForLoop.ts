@@ -51,6 +51,6 @@ export function parseForLoop(this: SourceFileNode, tsNode: ts.Node, tsChildren: 
 
   function getLoopPart(index: number){
     const part = tsChildren[index]
-    return ts.isToken(part) ? undefined : part
+    return part.kind === ts.SyntaxKind.OpenParenToken || part.kind === ts.SyntaxKind.SemicolonToken ? undefined : part
   }
 }
