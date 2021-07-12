@@ -7,6 +7,9 @@ import commonjs from "@rollup/plugin-commonjs"
 import replace from "@rollup/plugin-replace"
 import livereload from "rollup-plugin-livereload"
 import styles from "rollup-plugin-styles"
+import { terser } from "rollup-plugin-terser"
+
+const dev = process.env.NODE_ENV === "development"
 
 export default {
   input: "3up/index.tsx",
@@ -14,7 +17,7 @@ export default {
   output: {
     dir: "3up/dist",
     format: "iife",
-    sourcemap: true,
+    sourcemap: dev,
     globals: {
       perf_hooks: "undefined",
       inspector: "undefined",
@@ -22,7 +25,7 @@ export default {
   },
   plugins: [
     replace({
-      "process.env.NODE_ENV": JSON.stringify("development"),
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
       preventAssignment: true,
     }),
     typescript({
@@ -33,11 +36,16 @@ export default {
     }),
     nodePolyfills(),
     nodeResolve(),
-    serve({
-      contentBase: ["3up/dist", "3up"],
-      port: process.env.PORT || 3838, // parseInt("3up", 31)
-    }),
-    livereload({ watch: "3up/dist" }),
+    ...dev ? [
+      serve({
+        contentBase: ["3up"],
+        port: process.env.PORT || 3838, // parseInt("3up", 31)
+      }),
+      livereload({ watch: "3up/dist" }),
+    ] : [],
     styles(),
+    ...!dev ? [
+      terser(),
+    ] : [],
   ],
 }
