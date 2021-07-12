@@ -85,6 +85,8 @@ export class SourceFileNode extends Node {
   _parseTsNode(tsNode: ts.Node): Node{
     if(isStatement(tsNode))
       return this.parseStatement(tsNode)
+    if(tsNode.kind === ts.SyntaxKind.JSDocComment)
+      return this.parseTrivia(tsNode.getStart(), tsNode.end)
     if(tsNode.kind === ts.SyntaxKind.SyntaxList)
       return this.parseSyntaxList(tsNode as ts.SyntaxList)
     if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
@@ -149,8 +151,8 @@ export class SourceFileNode extends Node {
   // See the values of .getStart() for JSDocComment & PropertyAssignment in
   // https://ts-ast-viewer.com/#code/FAYw9gdgzgLgBADzgXjgb2HLcD0AqPOAQwCMQ48dNsiAuOAVgBpgBfYIA
   getStart(tsNode: ts.Node): number{
-    while(tsNode.getChildCount())
-      tsNode = tsNode.getChildAt(0)
+    while(tsNode.kind !== ts.SyntaxKind.JSDocComment && tsNode.getChildren().length)
+      tsNode = tsNode.getChildren()[0]
     return tsNode.getStart()
   }
 
