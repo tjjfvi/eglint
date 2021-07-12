@@ -85,30 +85,36 @@ export class SourceFileNode extends Node {
   _parseTsNode(tsNode: ts.Node): Node{
     if(isStatement(tsNode))
       return this.parseStatement(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.JSDocComment)
-      return this.parseTrivia(tsNode.getStart(), tsNode.end)
-    if(tsNode.kind === ts.SyntaxKind.SyntaxList)
-      return this.parseSyntaxList(tsNode as ts.SyntaxList)
-    if(tsNode.kind === ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral)
-      return this.parseStringLiteral(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.ArrowFunction)
-      return this.parseArrowFunction(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.BinaryExpression)
-      return this.parseBinaryExpression(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.PropertyAssignment || tsNode.kind === ts.SyntaxKind.ShorthandPropertyAssignment)
-      return this.parsePropertyAssignment(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.ObjectBindingPattern || tsNode.kind === ts.SyntaxKind.ArrayBindingPattern)
-      return this.parseBindingPattern(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.ClassExpression)
-      return this.parseClassLike(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.UnionType || tsNode.kind === ts.SyntaxKind.IntersectionType)
-      return this.parseUnionIntersectionType(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.TemplateExpression)
-      return this.parseTemplateString(tsNode)
-    if(tsNode.kind === ts.SyntaxKind.Parameter)
-      return new TsNodeNode.for[tsNode.kind](this.parseChildrenWithModifiers(tsNode.getChildren()))
-    if(tsNode.kind === ts.SyntaxKind.FunctionExpression || tsNode.kind === ts.SyntaxKind.MethodDeclaration)
-      return this.parseFunction(tsNode.getChildren())
+    switch(tsNode.kind) {
+      case ts.SyntaxKind.JSDocComment:
+        return this.parseTrivia(tsNode.getStart(), tsNode.end)
+      case ts.SyntaxKind.SyntaxList:
+        return this.parseSyntaxList(tsNode as ts.SyntaxList)
+      case ts.SyntaxKind.StringLiteral || tsNode.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+        return this.parseStringLiteral(tsNode)
+      case ts.SyntaxKind.ArrowFunction:
+        return this.parseArrowFunction(tsNode)
+      case ts.SyntaxKind.BinaryExpression:
+        return this.parseBinaryExpression(tsNode)
+      case ts.SyntaxKind.PropertyAssignment:
+      case ts.SyntaxKind.ShorthandPropertyAssignment:
+        return this.parsePropertyAssignment(tsNode)
+      case ts.SyntaxKind.ObjectBindingPattern:
+      case ts.SyntaxKind.ArrayBindingPattern:
+        return this.parseBindingPattern(tsNode)
+      case ts.SyntaxKind.ClassExpression:
+        return this.parseClassLike(tsNode)
+      case ts.SyntaxKind.UnionType:
+      case ts.SyntaxKind.IntersectionType:
+        return this.parseUnionIntersectionType(tsNode)
+      case ts.SyntaxKind.TemplateExpression:
+        return this.parseTemplateString(tsNode)
+      case ts.SyntaxKind.Parameter:
+        return new TsNodeNode.for.Parameter(this.parseChildrenWithModifiers(tsNode.getChildren()))
+      case ts.SyntaxKind.FunctionExpression:
+      case ts.SyntaxKind.MethodDeclaration:
+        return this.parseFunction(tsNode.getChildren())
+    }
 
     const tsChildren = tsNode.getChildren()
 
