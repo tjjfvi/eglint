@@ -19,7 +19,9 @@ export function parseUnionIntersectionType(this: SourceFileNode, tsNode: ts.Node
     if(tsChild.kind === separatorKind)
       nodes.push(new SyntaxListSeparatorNode(this.finishTrivia([
         this.parseTriviaBetween(tsChildren[i - 1], tsChild),
-        this.parseTsNode(tsChild),
+        i === 0
+          ? (this.getText(tsChild), new (isUnion ? LeadingBarNode : LeadingAmpersandNode)(true))
+          : this.parseTsNode(tsChild),
         this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
       ])))
     else
