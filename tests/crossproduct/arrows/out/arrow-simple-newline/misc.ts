@@ -13,3 +13,7 @@ const f = (  ) =>
 const g = a =>
   {
   a.a = a  ; return a }
+const h = async x =>
+  5
+const j = async () =>
+  2
