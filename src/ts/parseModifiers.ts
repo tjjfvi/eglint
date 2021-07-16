@@ -20,7 +20,7 @@ export function parseChildrenWithModifiers(
   tsChildren: ts.Node[],
   inner = this.parseTsChildren,
 ): [...Node[], IndentNode]{
-  if(tsChildren[0].kind === ts.SyntaxKind.SyntaxList)
+  if(tsChildren[0]?.kind === ts.SyntaxKind.SyntaxList)
     return [
       this.parseModifiers(this.getChildren(tsChildren[0]), tsChildren[1]),
       ...inner.call(this, tsChildren.slice(1)),

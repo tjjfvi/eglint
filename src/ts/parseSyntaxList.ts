@@ -78,7 +78,6 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
     case ts.SyntaxKind.HeritageClause:
     case ts.SyntaxKind.TypeAliasDeclaration:
     case ts.SyntaxKind.TupleType:
-    case ts.SyntaxKind.GetAccessor:
     case ts.SyntaxKind.FunctionType:
     case ts.SyntaxKind.ConstructorType:
     case ts.SyntaxKind.TypeReference:

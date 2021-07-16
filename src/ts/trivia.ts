@@ -56,7 +56,7 @@ export function parseTrivia(this: SourceFileNode, start: number, end: number){
       whitespaceChildren.push(new NewlineNode(match[0].match(/\n/g)?.length ?? 0, calculateDeltaIndent(match[1])))
     else if((match = /^ +/.exec(text)))
       whitespaceChildren.push(new SpaceNode(match[0].length))
-    else if((match = /^\/\*[^]*\*\//.exec(text))) {
+    else if((match = /^\/\*[^]*?\*\//.exec(text))) {
       finishWhitespaceChildren()
       nodes.push(new BlockComment(match[0]))
     }

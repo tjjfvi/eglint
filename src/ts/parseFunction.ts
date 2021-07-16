@@ -6,7 +6,7 @@ import { EmptyNode, TsNodeNode } from "./TsNodeNode"
 export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
   // tsChildren is [
   //   <Modifiers>?,
-  //   "function"?,
+  //   ("function" | "get" | "set")?,
   //   "*"?,
   //   <Name>?
   //   ...[
@@ -25,7 +25,13 @@ export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
   // ]
   const tsModifiers = getChildOfKind(tsChildren, 0, ts.SyntaxKind.SyntaxList)
   const postModifierIndex = tsModifiers ? 1 : 0
-  const tsFunctionKeyword = getChildOfKind(tsChildren, postModifierIndex, ts.SyntaxKind.FunctionKeyword)
+  const tsFunctionKeyword = getChildOfKind(
+    tsChildren,
+    postModifierIndex,
+    ts.SyntaxKind.FunctionKeyword,
+    ts.SyntaxKind.GetKeyword,
+    ts.SyntaxKind.SetKeyword,
+  )
   const postFunctionKeywordIndex = postModifierIndex + (tsFunctionKeyword ? 1 : 0)
   const tsAsterisk = getChildOfKind(tsChildren, postFunctionKeywordIndex, ts.SyntaxKind.AsteriskToken)
   const postAsteriskIndex = postFunctionKeywordIndex + (tsAsterisk ? 1 : 0)

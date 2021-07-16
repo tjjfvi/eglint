@@ -113,6 +113,8 @@ export class SourceFileNode extends Node {
         return new TsNodeNode.for.Parameter(this.parseChildrenWithModifiers(this.getChildren(tsNode)))
       case ts.SyntaxKind.FunctionExpression:
       case ts.SyntaxKind.MethodDeclaration:
+      case ts.SyntaxKind.GetAccessor:
+      case ts.SyntaxKind.SetAccessor:
         return this.parseFunction(this.getChildren(tsNode))
     }
 
@@ -125,6 +127,8 @@ export class SourceFileNode extends Node {
   }
 
   parsePartialTsChildren(tsChildren: ts.Node[]){
+    if(!tsChildren.length) return []
+
     let children = []
     let lastPos = this.getStart(tsChildren[0])
 
