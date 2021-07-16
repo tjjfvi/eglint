@@ -14,9 +14,9 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
   // - [ "<", SyntaxList[ ... ], ">", "(", SyntaxList[ ... ], ")", ":", <ReturnType> ]
   switch(tsChildren.length) {
     case 1: {
-      const tsParameters = tsChildren[0].getChildren(this.sourceFile)
+      const tsParameters = this.getChildren(tsChildren[0])
       const tsParameter = tsParameters[0]
-      const tsParameterChildren = tsParameter.getChildren(this.sourceFile)
+      const tsParameterChildren = this.getChildren(tsParameter)
       const identifier = tsParameterChildren[0]
       const parsedSyntaxList = this.parseCommaSyntaxList(tsChildren[0] as ts.SyntaxList)
       return new SwappableArrowFunctionSigNode(
@@ -37,11 +37,11 @@ export function parseArrowFunctionSig(this: SourceFileNode, tsChildren: ts.Node[
       )
     }
     case 3: {
-      const parameters = tsChildren[1].getChildren(this.sourceFile)
+      const parameters = this.getChildren(tsChildren[1])
       if(!parameters.length || parameters.length > 2)
         break
       const parameter = parameters[0]
-      const parameterChildren = parameter.getChildren(this.sourceFile)
+      const parameterChildren = this.getChildren(parameter)
       if(parameterChildren.length !== 1)
         break
       // tsChildren must be [ "(", SyntaxList[ Parameter [ Identifier ], ","? ], ")" ]

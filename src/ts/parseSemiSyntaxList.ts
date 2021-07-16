@@ -10,7 +10,7 @@ import { TsNodeNode } from "./TsNodeNode"
 // All of the functions in this file also allow commas, for use in interfaces & object type literals
 
 export function parseSemiSyntaxList(this: SourceFileNode, tsNode: ts.Node){
-  const children = tsNode.getChildren()
+  const children = this.getChildren(tsNode)
   const nodes = []
   for(const [i, child] of children.entries()) {
     const semicolonTsNode = this.getSemi(child)
@@ -36,12 +36,12 @@ export function parseSemi(this: SourceFileNode, node: ts.Node | undefined){
 }
 
 export function getSemi(this: SourceFileNode, tsNode: ts.Node){
-  const children = tsNode.getChildren()
+  const children = this.getChildren(tsNode)
   return getChildOfKind(children, children.length - 1, ts.SyntaxKind.SemicolonToken, ts.SyntaxKind.CommaToken)
 }
 
 export function getSemilessChildren(this: SourceFileNode, tsNode: ts.Node){
-  const children = tsNode.getChildren()
+  const children = this.getChildren(tsNode)
   if(this.getSemi(tsNode))
     return children.slice(0, -1)
   else

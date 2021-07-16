@@ -4,7 +4,7 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
 export function parseBinaryExpression(this: SourceFileNode, tsNode: ts.Node){
-  const children = tsNode.getChildren(this.sourceFile)
+  const children = this.getChildren(tsNode)
   if(children.length !== 3)
     throw new Error("Invalid BinaryExpression")
   const [a, op, b] = children

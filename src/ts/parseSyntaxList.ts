@@ -92,7 +92,7 @@ export function parseSyntaxList(this: SourceFileNode, tsNode: ts.SyntaxList){
       return this.parseSemiSyntaxList(tsNode)
     case ts.SyntaxKind.CaseBlock:
       return new SyntaxListNode(
-        tsNode.getChildren().flatMap((tsChild, i, tsChildren) => [
+        this.getChildren(tsNode).flatMap((tsChild, i, tsChildren) => [
           this.parseTsNode(tsChild),
           this.parseTriviaBetween(tsChild, tsChildren[i + 1]),
         ]),

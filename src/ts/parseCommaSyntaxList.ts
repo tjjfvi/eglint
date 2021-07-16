@@ -5,7 +5,7 @@ import { SyntaxListSeparatorNode, SyntaxListEntryNode, SyntaxListNode } from "./
 import { SourceFileNode } from "./SourceFileNode"
 
 export function parseCommaSyntaxList(this: SourceFileNode, tsNode: SyntaxList, parseChild = this.parseTsNode){
-  const children = tsNode.getChildren()
+  const children = this.getChildren(tsNode)
   const nodes = []
   for(const [i, child] of children.entries())
     if(child.kind === ts.SyntaxKind.CommaToken)

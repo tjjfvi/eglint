@@ -49,7 +49,7 @@ export class SourceFileNode extends Node {
     super([])
     this.children = [
       this.parseTrivia(0, this.getStart(sourceFile)),
-      ...this.parseTsChildren(sourceFile.getChildren(sourceFile)),
+      ...this.parseTsChildren(this.getChildren(sourceFile)),
     ]
     this._applyChildren()
   }
@@ -110,13 +110,13 @@ export class SourceFileNode extends Node {
       case ts.SyntaxKind.TemplateExpression:
         return this.parseTemplateString(tsNode)
       case ts.SyntaxKind.Parameter:
-        return new TsNodeNode.for.Parameter(this.parseChildrenWithModifiers(tsNode.getChildren()))
+        return new TsNodeNode.for.Parameter(this.parseChildrenWithModifiers(this.getChildren(tsNode)))
       case ts.SyntaxKind.FunctionExpression:
       case ts.SyntaxKind.MethodDeclaration:
-        return this.parseFunction(tsNode.getChildren())
+        return this.parseFunction(this.getChildren(tsNode))
     }
 
-    const tsChildren = tsNode.getChildren()
+    const tsChildren = this.getChildren(tsNode)
 
     if(tsChildren.length)
       return new TsNodeNode.for[tsNode.kind](this.parseTsChildren(tsChildren))
@@ -146,6 +146,12 @@ export class SourceFileNode extends Node {
     return this.source.slice(this.getStart(tsNode), tsNode.end)
   }
 
+  getChildren(tsNode: ts.Node): ts.Node[]
+  getChildren(tsNode: ts.Node | null | undefined): ts.Node[] | undefined
+  getChildren(tsNode: ts.Node | null | undefined): ts.Node[] | undefined{
+    return tsNode?.getChildren().filter(x => x.kind !== ts.SyntaxKind.JSDocComment)
+  }
+
   getText(tsNode: ts.Node){
     const start = this.getStart(tsNode)
     if(this.pos !== start)
@@ -157,13 +163,13 @@ export class SourceFileNode extends Node {
   // See the values of .getStart() for JSDocComment & PropertyAssignment in
   // https://ts-ast-viewer.com/#code/FAYw9gdgzgLgBADzgXjgb2HLcD0AqPOAQwCMQ48dNsiAuOAVgBpgBfYIA
   getStart(tsNode: ts.Node): number{
-    while(tsNode.kind !== ts.SyntaxKind.JSDocComment && tsNode.getChildren().length)
-      tsNode = tsNode.getChildren()[0]
+    while(tsNode.kind !== ts.SyntaxKind.JSDocComment && this.getChildren(tsNode).length)
+      tsNode = this.getChildren(tsNode)[0]
     return tsNode.getStart()
   }
 
   printTsNode(node: ts.Node, indent = 0){
-    const children = node.getChildren()
+    const children = this.getChildren(node)
     const start = this.getStart(node)
     const end = node.end
     const text = this.peekText(node)

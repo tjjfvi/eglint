@@ -8,7 +8,7 @@ import { EmptyNode, TsNodeNode } from "./TsNodeNode"
 const { ColonToken } = TsNodeNode.for
 
 export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node): Node{
-  const tsChildren = tsNode.getChildren()
+  const tsChildren = this.getChildren(tsNode)
   let [property, colon, binding, equals, fallback] = [] as Array<ts.Node | undefined>
 
   const buildBindingElement = (_assignments?: ts.Node[]): Node => {
@@ -61,7 +61,7 @@ export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node)
 
   switch(tsNode.kind) {
     case ts.SyntaxKind.BindingElement:
-      switch(tsNode.getChildren().length) {
+      switch(tsChildren.length) {
         case 1:
           // BindingElement [
           //   <Property: Identifier>,
@@ -143,7 +143,7 @@ export function parseObjectBindingElement(this: SourceFileNode, tsNode: ts.Node)
           //     <Fallback: Expression>,
           //   ]
           // ]
-          [[property, colon], [binding, equals, fallback]] = [tsChildren, tsChildren[2].getChildren()]
+          [[property, colon], [binding, equals, fallback]] = [tsChildren, this.getChildren(tsChildren[2])]
           return buildBindingElement()
 
         default:

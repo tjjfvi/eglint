@@ -20,13 +20,13 @@ export function parseClassLike(this: SourceFileNode, tsNode: ts.Node){
   //   <Body>,
   //   "}",
   // ]
-  const tsChildren = tsNode.getChildren()
+  const tsChildren = this.getChildren(tsNode)
   const classKeywordIndex = tsChildren.findIndex(x =>
     x.kind === ts.SyntaxKind.ClassKeyword || x.kind === ts.SyntaxKind.InterfaceKeyword,
   )
   const openBraceIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.OpenBraceToken)
   const lessThanIndex = tsChildren.findIndex(x => x.kind === ts.SyntaxKind.LessThanToken)
-  const tsModifiers = tsChildren[classKeywordIndex - 1]?.getChildren() ?? []
+  const tsModifiers = this.getChildren(tsChildren[classKeywordIndex - 1]) ?? []
   const tsClassKeyword = tsChildren[classKeywordIndex]
   const tsName = tsChildren[classKeywordIndex + 1].kind === ts.SyntaxKind.Identifier
     ? tsChildren[classKeywordIndex + 1]
@@ -35,10 +35,10 @@ export function parseClassLike(this: SourceFileNode, tsNode: ts.Node){
     ? tsChildren.slice(lessThanIndex, lessThanIndex + 3)
     : undefined
   const tsClauses = tsChildren[openBraceIndex - 1].kind === ts.SyntaxKind.SyntaxList
-    ? tsChildren[openBraceIndex - 1].getChildren()
+    ? this.getChildren(tsChildren[openBraceIndex - 1])
     : []
-  const tsExtendsClause = tsClauses.find(x => x.getChildren()[0].kind === ts.SyntaxKind.ExtendsKeyword)
-  const tsImplementsClause = tsClauses.find(x => x.getChildren()[0].kind === ts.SyntaxKind.ImplementsKeyword)
+  const tsExtendsClause = tsClauses.find(x => this.getChildren(x)[0].kind === ts.SyntaxKind.ExtendsKeyword)
+  const tsImplementsClause = tsClauses.find(x => this.getChildren(x)[0].kind === ts.SyntaxKind.ImplementsKeyword)
   const tsOpenBrace = tsChildren[openBraceIndex]
   const tsBody = tsChildren[openBraceIndex + 1]
   const tsCloseBrace = tsChildren[openBraceIndex + 2]

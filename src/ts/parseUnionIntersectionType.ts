@@ -5,7 +5,7 @@ import { SyntaxListSeparatorNode, SyntaxListEntryNode, SyntaxListNode } from "./
 import { SourceFileNode } from "./SourceFileNode"
 
 export function parseUnionIntersectionType(this: SourceFileNode, tsNode: ts.Node){
-  const tsChildren = tsNode.getChildren()[0].getChildren()
+  const tsChildren = this.getChildren(this.getChildren(tsNode)[0])
   const isUnion = tsNode.kind === ts.SyntaxKind.UnionType
   const separatorKind = isUnion ? ts.SyntaxKind.BarToken : ts.SyntaxKind.AmpersandToken
   const nodes = []

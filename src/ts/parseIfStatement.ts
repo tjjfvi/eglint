@@ -46,9 +46,10 @@ export function parseIfStatement(
       // ```
       const forceUnswappable = true
         && tsChildren[4].kind === ts.SyntaxKind.Block
-        && tsChildren[4].getChildren()[1].getChildren().length === 1
-        && tsChildren[4].getChildren()[1].getChildren()[0].kind === ts.SyntaxKind.IfStatement
-        && tsChildren[4].getChildren()[1].getChildren()[0].getChildren()[5]?.kind !== ts.SyntaxKind.ElseKeyword
+        && this.getChildren(this.getChildren(tsChildren[4])[1]).length === 1
+        && this.getChildren(this.getChildren(tsChildren[4])[1])[0].kind === ts.SyntaxKind.IfStatement
+        && this.getChildren(this.getChildren(this.getChildren(tsChildren[4])[1])[0])[5]?.kind
+        !== ts.SyntaxKind.ElseKeyword
       return new IfElseStatement(this.finishTrivia([
         new IfStatement(this.finishTrivia([
           ...this.parsePartialTsChildren(tsChildren.slice(0, 4)),

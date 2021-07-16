@@ -4,7 +4,7 @@ import { SourceFileNode } from "./SourceFileNode"
 import { EmptyNode, TsNodeNode } from "./TsNodeNode"
 
 export function parseArrayBindingElement(this: SourceFileNode, tsNode: ts.Node): Node{
-  const tsChildren = tsNode.getChildren()
+  const tsChildren = this.getChildren(tsNode)
   let [binding, equals, fallback] = [] as Array<ts.Node | undefined>
 
   const buildBindingElement = (_assignments?: ts.Node[]): Node => {
@@ -29,7 +29,7 @@ export function parseArrayBindingElement(this: SourceFileNode, tsNode: ts.Node):
 
   switch(tsNode.kind) {
     case ts.SyntaxKind.BindingElement:
-      switch(tsNode.getChildren().length) {
+      switch(tsChildren.length) {
         case 1:
           // BindingElement [
           //   <Binding>,

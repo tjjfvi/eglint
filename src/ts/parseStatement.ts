@@ -8,10 +8,10 @@ import { SourceFileNode } from "./SourceFileNode"
 import { TsNodeNode } from "./TsNodeNode"
 
 export function parseStatement(this: SourceFileNode, tsNode: ts.Node, forceUnswappable = false): Node{
-  const tsChildren = tsNode.getChildren(this.sourceFile)
+  const tsChildren = this.getChildren(tsNode)
   if(tsNode.kind === ts.SyntaxKind.Block) {
     const tsSyntaxList = tsChildren[1]
-    const tsStatements = tsSyntaxList.getChildren(this.sourceFile)
+    const tsStatements = this.getChildren(tsSyntaxList)
     if(tsStatements.length !== 1 || forceUnswappable)
       return new LoneBlockNode(this.parseTsChildren(tsChildren))
     const [tsStatement] = tsStatements

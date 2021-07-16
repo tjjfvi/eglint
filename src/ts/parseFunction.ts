@@ -45,7 +45,7 @@ export function parseFunction(this: SourceFileNode, tsChildren: ts.Node[]){
   const tsBody = tsChildren[colonIndex === -1 ? openParenIndex + 3 : colonIndex + 2]
   return new FunctionNode(this.finishTrivia([
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.parseModifiers(tsModifiers?.getChildren() ?? [], tsFunctionKeyword ?? tsAsterisk ?? tsName!),
+    this.parseModifiers(this.getChildren(tsModifiers) ?? [], tsFunctionKeyword ?? tsAsterisk ?? tsName!),
     tsFunctionKeyword ? this.parseTsNode(tsFunctionKeyword) : new EmptyNode(),
     tsAsterisk ? new FunctionAsteriskNode(this.finishTrivia([
       this.parseTriviaBetween(tsFunctionKeyword, tsAsterisk),

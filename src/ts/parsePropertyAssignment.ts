@@ -7,7 +7,7 @@ import { TsNodeNode } from "./TsNodeNode"
 const { PropertyAssignment, ColonToken } = TsNodeNode.for
 
 export function parsePropertyAssignment(this: SourceFileNode, tsNode: ts.Node){
-  const tsChildren = tsNode.getChildren()
+  const tsChildren = this.getChildren(tsNode)
   if(tsNode.kind === ts.SyntaxKind.ShorthandPropertyAssignment) {
     const identifier = this.parseTsNode(tsChildren[0])
     return new SwappablePropertyAssignmentNode(

@@ -25,7 +25,7 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
 
     case ts.SyntaxKind.ObjectBindingPattern:
     case ts.SyntaxKind.ObjectLiteralExpression: {
-      const [tsOpenBrace, tsSyntaxList, tsCloseBrace] = tsNode.getChildren()
+      const [tsOpenBrace, tsSyntaxList, tsCloseBrace] = this.getChildren(tsNode)
       return new ObjectBindingPattern(this.finishTrivia([
         this.parseTsNode(tsOpenBrace),
         this.parseTriviaBetween(tsOpenBrace, tsSyntaxList),
@@ -37,7 +37,7 @@ export function parseBindingPattern(this: SourceFileNode, tsNode: ts.Node): Node
 
     case ts.SyntaxKind.ArrayBindingPattern:
     case ts.SyntaxKind.ArrayLiteralExpression: {
-      const [tsOpenBracket, tsSyntaxList, tsCloseBracket] = tsNode.getChildren()
+      const [tsOpenBracket, tsSyntaxList, tsCloseBracket] = this.getChildren(tsNode)
       return new ArrayBindingPattern(this.finishTrivia([
         this.parseTsNode(tsOpenBracket),
         this.parseTriviaBetween(tsOpenBracket, tsSyntaxList),
