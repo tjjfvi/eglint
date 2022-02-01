@@ -1,6 +1,7 @@
 
 import "./RootNodeView.styl"
 import { Node } from "../src"
+import monacoLoader from "@monaco-editor/loader"
 import Editor from "@monaco-editor/react"
 import { useRef, useState } from "react"
 import React from "react"
@@ -9,6 +10,13 @@ import { mdiSwapHorizontal } from "@mdi/js"
 import { NodeView } from "./NodeView"
 import { editor } from "monaco-editor"
 import { ErrorView } from "./ErrorView"
+
+monacoLoader.init().then(monaco => {
+  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: true,
+    noSuggestionDiagnostics: true,
+  })
+})
 
 export interface RootNodeViewProps {
   text: string | Error,

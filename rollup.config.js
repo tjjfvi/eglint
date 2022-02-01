@@ -7,7 +7,7 @@ import commonjs from "@rollup/plugin-commonjs"
 import replace from "@rollup/plugin-replace"
 import livereload from "rollup-plugin-livereload"
 import styles from "rollup-plugin-styles"
-import { terser } from "rollup-plugin-terser"
+// import { terser } from "rollup-plugin-terser"
 
 const dev = process.env.NODE_ENV === "development"
 
@@ -44,8 +44,8 @@ export default {
       livereload({ watch: "3up/dist" }),
     ] : [],
     styles(),
-    ...!dev ? [
-      terser(),
-    ] : [],
+    // ...!dev ? [
+    //   terser(),
+    // ] : [],
   ],
 }
