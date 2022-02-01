@@ -34,3 +34,4 @@ jobs:
           publish_dir: 3up
           force_orphan: true
           exclude_assets: "node_modules,*.ts,*.tsx,*.styl,*.json,dist/*/**/*,dist/*.tsbuildinfo"
+          cname: eglint.t6.fyi
