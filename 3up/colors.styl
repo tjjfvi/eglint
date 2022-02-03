@@ -10,3 +10,9 @@ $yellow = #f1c40f
 $green = #2ecc71
 $blue = #0984e3
 $purple = #8e44ad
+
+prefix(prop)
+  -webkit-{prop} slice(arguments, 1)
+  -moz-{prop} slice(arguments, 1)
+  -ms-{prop} slice(arguments, 1)
+  {prop} slice(arguments, 1)
