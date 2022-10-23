@@ -68,6 +68,8 @@ const defaultReferenceText = `
 
 // Note: some types of syntax may not be supported yet
 
+// https://github.com/tjjfvi/eglint
+
 const mixedArrayExample = [1, 2, "abc", '"', 5n + 6n, []]
 
 const multilineArrayExample = [
@@ -104,6 +106,8 @@ const defaultSubjectText = `
 // You can view the CST (AST++) by clicking on the swap icons below.
 
 // Note: some types of syntax may not be supported yet
+
+// https://github.com/tjjfvi/eglint
 
 let
 foo
