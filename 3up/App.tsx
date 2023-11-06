@@ -4,11 +4,13 @@ import { Reference, SourceFileNode, Node } from "../src"
 import ts from "typescript"
 import { loader } from "@monaco-editor/react"
 import { RootNodeView } from "./RootNodeView"
+import * as lzstring from "lz-string"
 
 export const App = () => {
   Node["idN"] = 0
-  const [referenceText, setReferenceText] = useState(defaultReferenceText)
-  const [subjectText, setSubjectText] = useState(defaultSubjectText)
+  const [referenceText, setReferenceText] = useState(initialReferenceText)
+  const [subjectText, setSubjectText] = useState(initialSubjectText)
+  setHashState([referenceText, subjectText])
   const referenceNode = tryParse(referenceText)
   const subjectNode = tryParse(subjectText)
   const outputNode = tryValue(() =>
@@ -129,3 +131,21 @@ const bar =
 }
 )()
 `.trimStart()
+
+const [initialReferenceText, initialSubjectText] = loadHashState()
+
+function loadHashState(): [string, string]{
+  const hash = location.hash.slice(1)
+  try {
+    if(hash)
+      return JSON.parse(lzstring.decompressFromEncodedURIComponent(hash))
+  }
+  catch {
+    // pass
+  }
+  return [defaultReferenceText, defaultSubjectText]
+}
+
+function setHashState(state: [string, string]){
+  history.replaceState(null, "", "#" + lzstring.compressToEncodedURIComponent(JSON.stringify(state)))
+}
