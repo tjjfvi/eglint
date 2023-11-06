@@ -44,4 +44,4 @@ let bar = [ 1 + 2 * 3, [ 4, 5 ] ];
 In the example above, many issues are fixed, including contextual whitespace,
 trailing commas, and semicolons (both misplaced and missing) — *all from the simple reference file*.
 
-You can see it in action at [the interactive playgroud](https://eglint.t6.fyi/).
+You can see it in action at [the interactive playgroud](https://eglint.t6.dev/).
